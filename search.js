@@ -1,13 +1,10 @@
 function searchBooks() {
-    // Log the input value to ensure it's being captured
-    const searchTerm = document.getElementById('searchBox').value;
-    console.log(searchTerm); // This should log the input value each time you type
+    const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+    console.log("Search Term:", searchTerm); // Confirming the search term is captured correctly
 
-    // Placeholder for filtering logic - comment out complex logic for now
-    // const filteredBooks = books.filter(book => {
-    //     // Your filtering logic here
-    // });
+    const filteredBooks = books.filter(book => book.Title?.toLowerCase().includes(searchTerm));
+    console.log("Filtered Books:", filteredBooks); // Inspect the filtered results
 
-    // For now, just log a simple message
-    // console.log(filteredBooks);
+    // For now, you might comment out the displayResults function or simplify it
+    // displayResults(filteredBooks);
 }
