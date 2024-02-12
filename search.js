@@ -1,10 +1,11 @@
 let books = [];
 
 window.onload = function() {
-    fetch('artfictions-novels.json') // Updated to match your file name
+    fetch('artfictions-novels.json')
     .then(response => response.json())
     .then(data => {
         books = data;
+        console.log(data); // This line logs the fetched data to the console.
     })
     .catch(error => {
         console.error('Error fetching the books:', error);
