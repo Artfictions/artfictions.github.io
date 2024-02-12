@@ -1,20 +1,25 @@
 let books = [];
 
+// Load books from JSON file on window load
 window.onload = function() {
-    fetch('books.json')
+    fetch('books.json') // Adjust the path to your actual JSON file if needed
     .then(response => response.json())
     .then(data => {
-        books = data;
+        books = data; // Populate the books array with the fetched data
     })
     .catch(error => console.error('Error loading books:', error));
 };
 
+// Function to search books based on the search term
 function searchBooks() {
     const searchTerm = document.getElementById('searchBox').value.toLowerCase();
     
-    if (!searchTerm) {
-        document.getElementById('results').innerHTML = '';
-        return;
+    console.log(`Search Term: ${searchTerm}`); // Debugging line to see the search term
+
+    // Clear the results if the search term is empty or too short
+    if (!searchTerm || searchTerm.length < 3) {
+        document.getElementById('results').innerHTML = 'Please enter at least 3 characters to search.';
+        return; // Exit the function early
     }
 
     const filteredBooks = books.filter(book => 
@@ -26,12 +31,19 @@ function searchBooks() {
         book.Themes?.some(theme => theme?.toLowerCase().includes(searchTerm))
     );
 
-    displayResults(filteredBooks);
+    console.log(filteredBooks); // Debugging line to see filtered results
+
+    if (filteredBooks.length > 0) {
+        displayResults(filteredBooks);
+    } else {
+        document.getElementById('results').innerHTML = 'No results found.';
+    }
 }
 
+// Function to display search results
 function displayResults(filteredBooks) {
     const resultsContainer = document.getElementById('results');
-    resultsContainer.innerHTML = ''; // This line is key to clearing previous results
+    resultsContainer.innerHTML = ''; // Clear previous results
 
     filteredBooks.forEach(book => {
         const element = document.createElement('div');
