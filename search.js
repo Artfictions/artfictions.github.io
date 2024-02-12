@@ -1,7 +1,7 @@
 let books = [];
 
 window.onload = function() {
-    fetch('books.json')
+    fetch('artfictions-novels.json')
     .then(response => response.json())
     .then(data => {
         books = data;
