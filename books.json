@@ -1,14 +1,30 @@
 [
     {
-        "Title": "Fred Cabeza de Vaca",
-        "Author": "Vicente Luis Mora",
-        "Year": 2017,
-        "Themes": ["Art Institutions", "Curating"]
+        "Title": "Nefando",
+        "Author": "Mónica Ojeda",
+        "Country": "Ecuador",
+        "Language": "Spanish",
+        "Year of Publication": 2016,
+        "Themes": [
+            "Precariousness",
+            "Videogames",
+            "Migration",
+            "Mixed-media work",
+            "Sexuality"
+        ]
     },
     {
-        "Title": "The Art of War",
-        "Author": "Sun Tzu",
-        "Year": -500,
-        "Themes": ["Strategy", "Warfare"]
+        "Title": "Fred Cabeza de Vaca",
+        "Author": "Vicente Luis Mora",
+        "Country": "Spain",
+        "Language": "Spanish",
+        "Year of Publication": 2017,
+        "Themes": [
+            "Art Institutions",
+            "Curating",
+            "Economy",
+            "Celebrity culture",
+            "Crisis"
+        ]
     }
 ]
