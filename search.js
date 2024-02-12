@@ -1,11 +1,10 @@
-let books = [];
+let books = []; // This should be at the top of the file
 
-// Load books from JSON file
 window.onload = function() {
     fetch('books.json')
     .then(response => response.json())
     .then(data => {
-        books = data;
+        books = data; // This populates the 'books' array with data from the JSON file
     })
     .catch(error => console.error('Error loading books:', error));
 };
