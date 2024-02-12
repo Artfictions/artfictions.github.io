@@ -15,12 +15,11 @@ window.onload = function() {
 function searchBooks() {
     const searchTerm = document.getElementById('searchBox').value.toLowerCase();
     const filteredBooks = books.filter(book => {
-        return book.Title.toLowerCase().includes(searchTerm) ||
-               book.Author.toLowerCase().includes(searchTerm) ||
-               book.Themes.some(theme => theme.toLowerCase().includes(searchTerm));
+        // Ensure each property exists before calling toLowerCase()
+        return (book.Title?.toLowerCase().includes(searchTerm)) ||
+               (book.Author?.toLowerCase().includes(searchTerm)) ||
+               (book.Themes && book.Themes.some(theme => theme?.toLowerCase().includes(searchTerm)));
     });
-    displayResults(filteredBooks);
-}
 
 function displayResults(books) {
     const resultsContainer = document.getElementById('results');
