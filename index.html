@@ -3,25 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Advanced Book Search</title>
+    <style>
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap; /* Ensures responsiveness */
+            gap: 10px; /* Adds some space between the search boxes */
+        }
+        .search-container input {
+            flex: 1; /* Allows input fields to grow and fill available space */
+            min-width: 120px; /* Ensures input fields do not become too small */
+        }
+        /* Adjust button style as needed */
+        button {
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <h1>Advanced Search for Books</h1>
-    <div>
+    <div class="search-container">
         <input type="text" id="searchTitle" placeholder="Search by Title">
-    </div>
-    <div>
         <input type="text" id="searchAuthor" placeholder="Search by Author">
-    </div>
-    <div>
         <input type="text" id="searchCountry" placeholder="Search by Country">
-    </div>
-    <div>
         <input type="text" id="searchLanguage" placeholder="Search by Language">
-    </div>
-    <div>
         <input type="text" id="searchYear" placeholder="Search by Year of Publication">
-    </div>
-    <div>
         <input type="text" id="searchThemes" placeholder="Search by Themes">
     </div>
     <button onclick="searchBooks()">Search</button>
