@@ -1,7 +1,7 @@
 let books = [];
 
 window.onload = function() {
-    fetch('artfictions-novels.json')
+    fetch('artfictions-books.json') // Updated to match your file name
     .then(response => response.json())
     .then(data => {
         books = data;
