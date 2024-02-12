@@ -2,11 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Book Search</title>
+    <title>Advanced Book Search</title>
 </head>
 <body>
-    <h1>Search for a Book</h1>
-    <input type="text" id="searchBox" placeholder="Enter search term..." onkeyup="searchBooks()">
+    <h1>Advanced Search for Books</h1>
+    <div>
+        <input type="text" id="searchTitle" placeholder="Search by Title">
+    </div>
+    <div>
+        <input type="text" id="searchAuthor" placeholder="Search by Author">
+    </div>
+    <div>
+        <input type="text" id="searchCountry" placeholder="Search by Country">
+    </div>
+    <div>
+        <input type="text" id="searchLanguage" placeholder="Search by Language">
+    </div>
+    <div>
+        <input type="text" id="searchYear" placeholder="Search by Year of Publication">
+    </div>
+    <div>
+        <input type="text" id="searchThemes" placeholder="Search by Themes">
+    </div>
+    <button onclick="searchBooks()">Search</button>
     <div id="results"></div>
 
     <script src="search.js"></script>

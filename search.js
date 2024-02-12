@@ -12,32 +12,23 @@ window.onload = function() {
 
 // Function to search books based on the search term
 function searchBooks() {
-    const searchTerm = document.getElementById('searchBox').value.toLowerCase();
-    
-    console.log(`Search Term: ${searchTerm}`); // Debugging line to see the search term
-
-    // Clear the results if the search term is empty or too short
-    if (!searchTerm || searchTerm.length < 3) {
-        document.getElementById('results').innerHTML = 'Please enter at least 3 characters to search.';
-        return; // Exit the function early
-    }
+    const searchTitle = document.getElementById('searchTitle').value.toLowerCase();
+    const searchAuthor = document.getElementById('searchAuthor').value.toLowerCase();
+    const searchCountry = document.getElementById('searchCountry').value.toLowerCase();
+    const searchLanguage = document.getElementById('searchLanguage').value.toLowerCase();
+    const searchYear = document.getElementById('searchYear').value.toLowerCase();
+    const searchThemes = document.getElementById('searchThemes').value.toLowerCase();
 
     const filteredBooks = books.filter(book => 
-        book.Title?.toLowerCase().includes(searchTerm) ||
-        book.Author?.toLowerCase().includes(searchTerm) ||
-        book.Country?.toLowerCase().includes(searchTerm) ||
-        book.Language?.toLowerCase().includes(searchTerm) ||
-        book['Year of Publication']?.toString().includes(searchTerm) ||
-        book.Themes?.some(theme => theme?.toLowerCase().includes(searchTerm))
+        (searchTitle ? book.Title?.toLowerCase().includes(searchTitle) : true) &&
+        (searchAuthor ? book.Author?.toLowerCase().includes(searchAuthor) : true) &&
+        (searchCountry ? book.Country?.toLowerCase().includes(searchCountry) : true) &&
+        (searchLanguage ? book.Language?.toLowerCase().includes(searchLanguage) : true) &&
+        (searchYear ? book['Year of Publication']?.toString().includes(searchYear) : true) &&
+        (searchThemes ? book.Themes?.some(theme => theme?.toLowerCase().includes(searchThemes)) : true)
     );
 
-    console.log(filteredBooks); // Debugging line to see filtered results
-
-    if (filteredBooks.length > 0) {
-        displayResults(filteredBooks);
-    } else {
-        document.getElementById('results').innerHTML = 'No results found.';
-    }
+    displayResults(filteredBooks);
 }
 
 // Function to display search results
