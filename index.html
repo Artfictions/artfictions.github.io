@@ -7,12 +7,17 @@
         .search-container {
             display: flex;
             justify-content: space-between;
-            flex-wrap: wrap; /* Ensures responsiveness */
-            gap: 10px; /* Adds some space between the search boxes */
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .search-container input {
-            flex: 1; /* Allows input fields to grow and fill available space */
-            min-width: 120px; /* Ensures input fields do not become too small */
+            flex: 1;
+            min-width: 120px;
+        }
+        /* Style the button container */
+        .button-container {
+            text-align: center; /* Center the button horizontally */
+            margin-top: 10px; /* Add some space between the input fields and the button */
         }
         /* Adjust button style as needed */
         button {
@@ -30,7 +35,10 @@
         <input type="text" id="searchYear" placeholder="Search by Year of Publication">
         <input type="text" id="searchThemes" placeholder="Search by Themes">
     </div>
-    <button onclick="searchBooks()">Search</button>
+    <br> <!-- Add a line break -->
+    <div class="button-container"> <!-- Container for the search button -->
+        <button onclick="searchBooks()">Search</button>
+    </div>
     <div id="results"></div>
 
     <script src="search.js"></script>
