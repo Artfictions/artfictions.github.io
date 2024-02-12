@@ -1,19 +1,22 @@
-// Define an empty array to hold the books data
 let books = [];
 
-// Load books from JSON file on window load
 window.onload = function() {
-    fetch('books.json') // Make sure the path to your JSON file is correct
+    fetch('books.json')
     .then(response => response.json())
     .then(data => {
-        books = data; // Populate the books array with the fetched data
+        books = data;
     })
     .catch(error => console.error('Error loading books:', error));
 };
 
-// Function to search books based on the search term
 function searchBooks() {
     const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+    
+    if (!searchTerm) {
+        document.getElementById('results').innerHTML = '';
+        return;
+    }
+
     const filteredBooks = books.filter(book => 
         book.Title?.toLowerCase().includes(searchTerm) ||
         book.Author?.toLowerCase().includes(searchTerm) ||
@@ -26,10 +29,9 @@ function searchBooks() {
     displayResults(filteredBooks);
 }
 
-// Function to display search results
 function displayResults(filteredBooks) {
     const resultsContainer = document.getElementById('results');
-    resultsContainer.innerHTML = ''; // Clear previous results
+    resultsContainer.innerHTML = ''; // This line is key to clearing previous results
 
     filteredBooks.forEach(book => {
         const element = document.createElement('div');
