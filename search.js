@@ -1,39 +1,13 @@
-let books = [];
-
-window.onload = function() {
-    fetch('artfictions-novels.json')
-    .then(response => response.json())
-    .then(data => {
-        books = data;
-        console.log(data); // This line logs the fetched data to the console.
-    })
-    .catch(error => {
-        console.error('Error fetching the books:', error);
-    });
-};
-
 function searchBooks() {
-    const searchTerm = document.getElementById('searchBox').value.toLowerCase();
-    const filteredBooks = books.filter(book => {
-        // Ensure each property exists before calling toLowerCase()
-        return (book.Title?.toLowerCase().includes(searchTerm)) ||
-               (book.Author?.toLowerCase().includes(searchTerm)) ||
-               (book.Themes && book.Themes.some(theme => theme?.toLowerCase().includes(searchTerm)));
-    });
+    // Log the input value to ensure it's being captured
+    const searchTerm = document.getElementById('searchBox').value;
+    console.log(searchTerm); // This should log the input value each time you type
 
-function displayResults(books) {
-    const resultsContainer = document.getElementById('results');
-    resultsContainer.innerHTML = ''; // Clear previous results
+    // Placeholder for filtering logic - comment out complex logic for now
+    // const filteredBooks = books.filter(book => {
+    //     // Your filtering logic here
+    // });
 
-    books.forEach(book => {
-        const element = document.createElement('div');
-        element.classList.add('book');
-        element.innerHTML = `<h2>${book.Title}</h2>
-                             <p>Author: ${book.Author}</p>
-                             <p>Country: ${book.Country}</p>
-                             <p>Language: ${book.Language}</p>
-                             <p>Year of Publication: ${book['Year of Publication']}</p>
-                             <p>Themes: ${book.Themes.join(', ')}</p>`;
-        resultsContainer.appendChild(element);
-    });
+    // For now, just log a simple message
+    // console.log(filteredBooks);
 }
