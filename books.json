@@ -1,0 +1,14 @@
+[
+    {
+        "Title": "Fred Cabeza de Vaca",
+        "Author": "Vicente Luis Mora",
+        "Year": 2017,
+        "Themes": ["Art Institutions", "Curating"]
+    },
+    {
+        "Title": "The Art of War",
+        "Author": "Sun Tzu",
+        "Year": -500,
+        "Themes": ["Strategy", "Warfare"]
+    }
+]
