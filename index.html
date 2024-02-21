@@ -1,46 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Essential meta tags for responsive design and SEO -->
+
     <meta charset="UTF-8">
-    <title>Advanced Book Search</title>
-    <style>
-        .search-container {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .search-container input {
-            flex: 1;
-            min-width: 120px;
-        }
-        /* Style the button container */
-        .button-container {
-            text-align: center; /* Center the button horizontally */
-            margin-top: 10px; /* Add some space between the input fields and the button */
-        }
-        /* Adjust button style as needed */
-        button {
-            cursor: pointer;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>artfictions</title>
+
+    <!-- Updated project description -->
+
+    <meta name="description" content="Assessing the Contemporary Art Novel in Spanish and Portuguese: Cultural Labour, Personal Identification and the Materialisation of Alternative Art Worlds. An IRC Laureate grant by Carlos Garrido Castellano.">
+    <meta name="keywords" content="Artfictions Project, Contemporary Art Novel, Spanish, Portuguese, Cultural Labour, Personal Identification, Alternative Art Worlds, IRC Laureate Grant, Carlos Garrido Castellano, University College Cork">
+    <meta name="author" content="Carlos Garrido Castellano">
+
+    <!-- External CSS link -->
+
+    <link rel="stylesheet" href="assets/main.css">
+
+    <!-- Favicon and Apple Touch Icon for branding -->
+
+    <link rel="icon" href="assets/favicon.ico">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 </head>
 <body>
-    <h1>Advanced Search for Books</h1>
-    <div class="search-container">
-        <input type="text" id="searchTitle" placeholder="Search by Title">
-        <input type="text" id="searchAuthor" placeholder="Search by Author">
-        <input type="text" id="searchCountry" placeholder="Search by Country">
-        <input type="text" id="searchLanguage" placeholder="Search by Language">
-        <input type="text" id="searchYear" placeholder="Search by Year of Publication">
-        <input type="text" id="searchThemes" placeholder="Search by Themes">
-    </div>
-    <br> <!-- Add a line break -->
-    <div class="button-container"> <!-- Container for the search button -->
-        <button onclick="searchBooks()">Search</button>
-    </div>
-    <div id="results"></div>
+    <div class="container">
 
-    <script src="search.js"></script>
+        <!-- Header section with site title and navigation -->
+
+        <header>
+            <div class="header-content">
+
+                <!-- Site title linking to the homepage -->
+
+                <h1><a href="index.html" class="site-title-link">artfictions</a></h1>
+
+                <!-- Hamburger menu for mobile responsiveness -->
+
+                <button class="hamburger-menu">☰</button>
+            </div>
+
+            <!-- Navigation links for site sections -->
+
+            <nav>
+                <a href="#" class="nav-link">Artfictions Events</a>
+                <a href="#" class="nav-link">Contact Artfictions</a>
+            </nav>
+        </header>
+        <hr id="top-hr">
+        
+        <!-- Main content area with flexible container -->
+
+        <div class="flex-container">
+            <div class="body-content">
+
+                    <div class="portfolio">
+
+                        <!-- Portfolio Item 1 -->
+
+                        <div class="portfolio-item">
+                            <a href="#link1">
+                                <img src="assets/pexels-pixabay-159711.jpg" alt="A photo of books on a bookshelf">
+                                <div class="overlay">About Artfictions</div>
+                            </a>
+                        </div>
+
+                        <!-- Portfolio Item 2 -->
+
+                        <div class="portfolio-item">
+                            <a href="#link2">
+                                <img src="assets/pexels-pixabay-261909.jpg" alt="A photo of a person behind a stack of books">
+                                <div class="overlay">Meet our team</div>
+                            </a>
+                        </div>
+
+                        <!-- Portfolio Item 3 -->
+
+                        <div class="portfolio-item">
+                            <a href="#link3">
+                                <img src="assets/pexels-mark-cruzat-3494806.jpg" alt="Aerial photo of a library">
+                                <div class="overlay">Database</div>
+                            </a>
+                        </div>
+
+                        <!-- Portfolio Item 4 -->
+
+                        <div class="portfolio-item">
+                            <a href="#link4">
+                                <img src="assets/pexels-dan-cristian-1193743.jpg" alt="An abstract artwork">
+                                <div class="overlay">Resarch outputs</div>
+                            </a>
+                        </div>
+
+                        <!-- Portfolio Item 5 -->
+
+                        <div class="portfolio-item">
+                            <a href="#link5">
+                                <img src="assets/pexels-emre-can-acer-2110951.jpg" alt="An abstract artwork">
+                                <div class="overlay">Podcast</div>
+                            </a>
+                        </div>
+
+                        <!-- Portfolio Item 6 -->
+
+                        <div class="portfolio-item">
+                            <a href="#link6">
+                                <img src="assets/pexels-suzy-hazelwood-1762973.jpg" alt="An abstract artwork">
+                                <div class="overlay">Itineraries</div>
+                            </a>
+                        </div>
+                    </div>          
+                
+            </div>
+        </div>
+
+        <!-- Footer section -->
+
+        <footer>
+            <hr>
+
+            <div class="footer-logos">
+                <img src="assets/irc-logo.jpg" alt="Irish Research Council logo">
+                <img src="assets/ucc-logo.jpg" alt="University College Cork logo">
+            </div>
+            
+            <p>Artfictions: Assessing the Contemporary Art Novel in Spanish and Portuguese<br>
+            <a href="https://research.ie/" target="_blank">Artfictions is funded by the Irish Research Council (IRCLA/2022/3890)</a></p>
+
+        </footer>
+    </div>
+
+    <!-- JavaScript for interactive elements -->
+
+    <script>
+        document.querySelector('.hamburger-menu').addEventListener('click', function() {
+            document.querySelector('nav').classList.toggle('nav-active');
+        });
+    </script>
 </body>
 </html>

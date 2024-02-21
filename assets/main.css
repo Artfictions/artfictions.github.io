@@ -1,0 +1,260 @@
+/* Main CSS Styles */
+body {
+  font-family: 'Arial', sans-serif;
+  color: #333;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  background-color: #fff;
+}
+
+.container {
+  width: 90%; /* Adjusted from 80% to fill more space */
+  width: 80%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px; /* Adjust padding as needed */
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0px; /* Reduced from 10px to 0px */
+}
+
+header h1 {
+  margin: 0;
+  font-weight: normal; /* Making the header text not bold */
+}
+
+/* Flex Container for Multi-Column Layout */
+.flex-container {
+  display: flex;
+  margin-top: 20px; /* Space below the HR */
+}
+
+/* Styling for the site title link */
+
+.site-title-link {
+  color: inherit; /* Inherits the color from parent elements */
+  text-decoration: none; /* Removes underline */
+}
+
+.site-title-link:hover {
+  text-decoration: none; /* No underline on hover */
+}
+
+/* Horizontal Rule Styling */
+
+hr {
+  border: 0;
+  height: 1px;
+  background-color: #ddd;
+  margin-top: 10px; /* This remains the same, adjust if needed */
+  margin-bottom: 20px; /* Keep or adjust based on desired spacing to the next content */
+}
+
+header hr {
+  margin-bottom: 10px; /* Adjust this only affects <hr> within <header> */
+}
+
+#top-hr {
+  margin-bottom: 10px; /* Adjust this value as needed to control space below the top HR */
+}
+
+header {
+  padding: 0px 0; /* Adjust padding to control space within header/footer */
+}
+
+footer {
+  padding: 10px 0; /* Adjust padding to control space within header/footer */
+}
+
+/* Left-aligning the navigation menu */
+nav {
+  text-align: left;
+}
+
+/* Styling for navigation links */
+
+.nav-link {
+  color: #333; /* Keeping original color for header links */
+  text-decoration: none;
+  margin-right: 15px;
+}
+
+.nav-link:hover {
+  text-decoration: underline; /* Underline on hover */
+}
+
+/* Styling for the resources section */
+
+.resources-section {
+  flex: 1; /* Takes 1 portion of the available space */
+  text-align: left;
+  padding-right: 20px; /* Spacing between columns */
+  line-height: 1.3; /* Line spacing */
+}
+
+.resources-section a {
+  color: red; /* Same link color as body content */
+  text-decoration: none; /* No underline */
+}
+
+.resources-section a:hover {
+  text-decoration: none; /* No underline on hover */
+}
+
+/* Body Content */
+
+.body-content {
+  flex: 3; /* Takes 3 portions of the available space */
+  text-align: left;
+  line-height: 1.3; /* Line spacing */
+}
+
+.portfolio {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 20px; /* Adjust gap as needed */
+}
+
+.portfolio-item {
+  position: relative;
+  width: calc(33.333% - 20px); /* Adjust width as needed, ensuring it remains square */
+  height: 0; /* Set height to 0 */
+  padding-bottom: calc(33.333% - 20px); /* Use padding to control the height, making it equal to the width */
+  overflow: hidden;
+}
+
+.portfolio-item img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensures the image covers the square area without distorting */
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent overlay */
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.portfolio-item:hover .overlay {
+  opacity: 1;
+}
+
+
+
+/* Styling for H2 elements */
+
+.body-content h2 {
+  font-family: inherit; /* Inherits the font family from the body */
+  color: red; /* Sets the color to red */
+  font-size: 1em; /* Same size as the main body text */
+  font-weight: normal; /* Makes the text not bold */
+  margin-top: 40px; /* Adds more space above the H2 */
+  margin-bottom: 20px; /* Adds more space below the H2 */
+}
+
+.body-content .top-header { /* Increased specificity */
+  font-family: inherit; /* Inherits the font family from the body */
+  color: red; /* Sets the color to red */
+  font-size: 1em; /* Same size as the main body text */
+  font-weight: normal; /* Makes the text not bold */
+  margin-top: 15px; /* No space on top */
+  margin-bottom: 20px; /* Adds more space below the H2 */
+}
+
+/* Styling for links in the body content */
+
+.body-content a {
+  color: red; /* Red color for body links */
+  text-decoration: none; /* No underline */
+}
+
+.body-content a:hover {
+  color: #111; /* Dark grey color when hovered over */
+  text-decoration: underline; /* No underline on hover */
+}
+
+/* Hamburger Menu Button - hidden by default, shown in mobile view */
+.hamburger-menu {
+  display: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* Responsive Design for Mobile Devices */
+@media (max-width: 600px) {
+  .hamburger-menu {
+      display: block;
+  }
+
+  nav {
+      display: none; /* Hide navigation initially */
+  }
+
+  .nav-active {
+      display: block; /* Show navigation when active */
+  }
+}
+
+/* Media Query for Mobile Devices */
+@media (max-width: 600px) { /* Adjust the breakpoint as needed */
+  .flex-container {
+      flex-direction: column; /* Stack the columns vertically */
+  }
+
+  .resources-section,
+  .body-content {
+      flex: none; /* Reset flex settings for mobile */
+      width: 100%; /* Each section takes full width */
+      margin: 0; /* Adjust margins as needed */
+      padding: 0; /* Adjust padding as needed */
+  }
+}
+
+/* Footer Styling */
+
+footer {
+  text-align: right;
+  width: 100%;
+  margin: 0 auto;
+  display: block;
+}
+
+.footer-logos img {
+  height: 70px; /* Adjust this value as needed */
+  width: auto;
+  display: inline-block; /* Align logos side by side */
+  margin-left: 10px; /* Add some space between the logos */
+}
+
+/* Styling for links in the footer */
+footer a {
+  color: red; /* Red color for footer links */
+  text-decoration: none; /* Removes the underline */
+}
+
+footer a:hover {
+  text-decoration: none; /* Keeps links in the footer without underline on hover */
+}
+
+footer p {
+  font-size: 0.8em;
+}
