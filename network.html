@@ -265,25 +265,25 @@ async function init() {
     
     updateStatus('Processing data...');
     
-    // Process all novel data
-    novels.forEach(novel => {
-      // Process themes
-      const themes = [];
-      for (let i = 1; i <= 5; i++) {
-        const theme = novel[`Theme ${i}`];
-        if (theme && theme.trim() && theme.trim() !== '') {
-          themes.push(theme.trim());
-        }
-      }
-      novel.__themes = themes;
-      
-      // Process other fields
-      novel.__author = novel.Author ? novel.Author.trim() : 'Unknown';
-      novel.__country = novel.Country ? novel.Country.trim() : 'Unknown';
-      novel.__language = novel.Language ? novel.Language.trim() : 'Unknown';
-      novel.__publisher = novel.Publisher ? novel.Publisher.trim() : 'Unknown';
-      novel.__year = novel['Year of Publication'] ? String(novel['Year of Publication']).trim() : 'Unknown';
-    });
+// Process all novel data
+novels.forEach(novel => {
+  // Process themes
+  const themes = [];
+  for (let i = 1; i <= 5; i++) {
+    const theme = novel[`Theme ${i}`];
+    if (theme && String(theme).trim() !== '') {
+      themes.push(String(theme).trim());
+    }
+  }
+  novel.__themes = themes;
+  
+  // Process other fields - ensure they're strings before trimming
+  novel.__author = novel.Author ? String(novel.Author).trim() : 'Unknown';
+  novel.__country = novel.Country ? String(novel.Country).trim() : 'Unknown';
+  novel.__language = novel.Language ? String(novel.Language).trim() : 'Unknown';
+  novel.__publisher = novel.Publisher ? String(novel.Publisher).trim() : 'Unknown';
+  novel.__year = novel['Year of Publication'] ? String(novel['Year of Publication']).trim() : 'Unknown';
+});
     
     debug('✓ Processed all novel fields');
     
