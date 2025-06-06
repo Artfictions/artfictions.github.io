@@ -180,7 +180,7 @@
       <label for="nodeType2">Secondary nodes</label>
       <select id="nodeType2">
         <option value="themes">Themes</option>
-        <option value="authors">Authors</option>
+        <option value="authors" selected>Authors</option>
         <option value="countries">Countries</option>
         <option value="languages">Languages</option>
         <option value="publishers">Publishers</option>
@@ -265,25 +265,25 @@ async function init() {
     
     updateStatus('Processing data...');
     
-// Process all novel data
-novels.forEach(novel => {
-  // Process themes
-  const themes = [];
-  for (let i = 1; i <= 5; i++) {
-    const theme = novel[`Theme ${i}`];
-    if (theme && String(theme).trim() !== '') {
-      themes.push(String(theme).trim());
-    }
-  }
-  novel.__themes = themes;
-  
-  // Process other fields - ensure they're strings before trimming
-  novel.__author = novel.Author ? String(novel.Author).trim() : 'Unknown';
-  novel.__country = novel.Country ? String(novel.Country).trim() : 'Unknown';
-  novel.__language = novel.Language ? String(novel.Language).trim() : 'Unknown';
-  novel.__publisher = novel.Publisher ? String(novel.Publisher).trim() : 'Unknown';
-  novel.__year = novel['Year of Publication'] ? String(novel['Year of Publication']).trim() : 'Unknown';
-});
+    // Process all novel data
+    novels.forEach(novel => {
+      // Process themes
+      const themes = [];
+      for (let i = 1; i <= 5; i++) {
+        const theme = novel[`Theme ${i}`];
+        if (theme && String(theme).trim() !== '') {
+          themes.push(String(theme).trim());
+        }
+      }
+      novel.__themes = themes;
+      
+      // Process other fields - ensure they're strings before trimming
+      novel.__author = novel.Author ? String(novel.Author).trim() : 'Unknown';
+      novel.__country = novel.Country ? String(novel.Country).trim() : 'Unknown';
+      novel.__language = novel.Language ? String(novel.Language).trim() : 'Unknown';
+      novel.__publisher = novel.Publisher ? String(novel.Publisher).trim() : 'Unknown';
+      novel.__year = novel['Year of Publication'] ? String(novel['Year of Publication']).trim() : 'Unknown';
+    });
     
     debug('✓ Processed all novel fields');
     
@@ -608,9 +608,13 @@ function visualizeNetwork(data) {
     .selectAll('circle')
     .data(data.nodes)
     .join('circle')
-    .attr('class', 'node')
+    .attr('class', d => {
+      if (data.networkType === 'bipartite') {
+        return `node node-type-${d.nodeTypeIndex}`;
+      }
+      return 'node node-single';
+    })
     .attr('r', d => Math.sqrt(d.frequency) * 5 + 5)
-    .attr('fill', '#1f77b4')
     .call(d3.drag()
       .on('start', dragstarted)
       .on('drag', dragged)
@@ -622,6 +626,7 @@ function visualizeNetwork(data) {
         .style('top', (event.pageY - 10) + 'px')
         .html(`
           <strong>${d.id}</strong><br>
+          Type: ${d.type}<br>
           Appears in ${d.frequency} novels<br>
           ${d.connections} connections
         `);
@@ -699,6 +704,18 @@ function updateStats(nodes, links) {
   const totalNovels = window.appData.novels.length;
   const avgConnections = nodes.length > 0 ? (links.length * 2 / nodes.length).toFixed(1) : 0;
   
+  // Get current network type and node types
+  const networkType = document.getElementById('networkType').value;
+  const nodeType1 = document.getElementById('nodeType1').value;
+  const nodeType2 = document.getElementById('nodeType2').value;
+  
+  let nodeLabel = 'Nodes';
+  if (networkType === 'bipartite') {
+    nodeLabel = `${nodeType1} & ${nodeType2}`;
+  } else {
+    nodeLabel = nodeType1.charAt(0).toUpperCase() + nodeType1.slice(1);
+  }
+  
   document.getElementById('stats').innerHTML = `
     <div class="stat-card">
       <div class="stat-value">${totalNovels}</div>
@@ -706,11 +723,11 @@ function updateStats(nodes, links) {
     </div>
     <div class="stat-card">
       <div class="stat-value">${nodes.length}</div>
-      <div class="stat-label">Connected Themes</div>
+      <div class="stat-label">Connected ${nodeLabel}</div>
     </div>
     <div class="stat-card">
       <div class="stat-value">${links.length}</div>
-      <div class="stat-label">Theme Connections</div>
+      <div class="stat-label">Connections</div>
     </div>
     <div class="stat-card">
       <div class="stat-value">${avgConnections}</div>
@@ -719,8 +736,8 @@ function updateStats(nodes, links) {
   `;
 }
 
-function generateAnalysis(nodes, links) {
-  const topThemes = nodes
+function generateAnalysis(nodes, links, networkType, nodeType1, nodeType2) {
+  const topNodes = nodes
     .sort((a, b) => b.connections - a.connections)
     .slice(0, 5);
   
@@ -728,39 +745,145 @@ function generateAnalysis(nodes, links) {
     .sort((a, b) => b.weight - a.weight)
     .slice(0, 5);
   
-  document.getElementById('analysis-content').innerHTML = `
-    <h3>Most Connected Themes</h3>
-    <ol>
-      ${topThemes.map(theme => 
-        `<li><strong>${theme.id}</strong> - ${theme.connections} connections, ${theme.frequency} novels</li>`
-      ).join('')}
-    </ol>
+  let analysisHTML = '';
+  
+  if (networkType === 'bipartite') {
+    // Separate nodes by type for bipartite networks
+    const type1Nodes = nodes.filter(n => n.nodeTypeIndex === 0);
+    const type2Nodes = nodes.filter(n => n.nodeTypeIndex === 1);
     
-    <h3>Strongest Theme Relationships</h3>
-    <ol>
-      ${strongestLinks.map(link => 
-        `<li><strong>${link.source.id || link.source}</strong> ↔ <strong>${link.target.id || link.target}</strong> (${link.weight} novels)</li>`
-      ).join('')}
-    </ol>
+    const topType1 = type1Nodes
+      .sort((a, b) => b.connections - a.connections)
+      .slice(0, 3);
     
-    <p>The network reveals how themes cluster together in the artfiction corpus. Central themes act as bridges between different thematic communities.</p>
-  `;
+    const topType2 = type2Nodes
+      .sort((a, b) => b.connections - a.connections)
+      .slice(0, 3);
+    
+    analysisHTML = `
+      <h3>Most Connected ${nodeType1}</h3>
+      <ol>
+        ${topType1.map(node => 
+          `<li><strong>${node.id}</strong> - ${node.connections} connections to ${nodeType2}, appears in ${node.frequency} novels</li>`
+        ).join('')}
+      </ol>
+      
+      <h3>Most Connected ${nodeType2}</h3>
+      <ol>
+        ${topType2.map(node => 
+          `<li><strong>${node.id}</strong> - ${node.connections} connections to ${nodeType1}, appears in ${node.frequency} novels</li>`
+        ).join('')}
+      </ol>
+      
+      <h3>Strongest ${nodeType1}-${nodeType2} Relationships</h3>
+      <ol>
+        ${strongestLinks.map(link => 
+          `<li><strong>${link.source.id || link.source}</strong> ↔ <strong>${link.target.id || link.target}</strong> (${link.weight} novels)</li>`
+        ).join('')}
+      </ol>
+      
+      <p>This bipartite network reveals how ${nodeType1} and ${nodeType2} are connected through the artfiction corpus. The connections show which ${nodeType1} are most strongly associated with which ${nodeType2}.</p>
+    `;
+  } else {
+    // Single type network analysis
+    analysisHTML = `
+      <h3>Most Connected ${nodeType1}</h3>
+      <ol>
+        ${topNodes.map(node => 
+          `<li><strong>${node.id}</strong> - ${node.connections} connections, ${node.frequency} novels</li>`
+        ).join('')}
+      </ol>
+      
+      <h3>Strongest ${nodeType1} Relationships</h3>
+      <ol>
+        ${strongestLinks.map(link => 
+          `<li><strong>${link.source.id || link.source}</strong> ↔ <strong>${link.target.id || link.target}</strong> (${link.weight} novels)</li>`
+        ).join('')}
+      </ol>
+      
+      <p>The network reveals how ${nodeType1} cluster together in the artfiction corpus. Central ${nodeType1} act as bridges between different communities.</p>
+    `;
+  }
+  
+  document.getElementById('analysis-content').innerHTML = analysisHTML;
 }
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
   debug('✓ DOM loaded');
   
+  // Network type change handler
+  document.getElementById('networkType').addEventListener('change', function() {
+    const nodeType2Group = document.getElementById('nodeType2Group');
+    const maxNodesLabel = document.querySelector('label[for="maxNodes"]');
+    
+    if (this.value === 'bipartite') {
+      nodeType2Group.style.display = 'flex';
+      maxNodesLabel.textContent = 'Max nodes (per type)';
+      
+      // Make sure the second type is different from the first
+      const nodeType1 = document.getElementById('nodeType1').value;
+      const nodeType2 = document.getElementById('nodeType2');
+      
+      if (nodeType2.value === nodeType1) {
+        // Find a different option
+        const options = Array.from(nodeType2.options);
+        const differentOption = options.find(opt => opt.value !== nodeType1);
+        if (differentOption) {
+          nodeType2.value = differentOption.value;
+        }
+      }
+    } else {
+      nodeType2Group.style.display = 'none';
+      maxNodesLabel.textContent = 'Max nodes';
+    }
+  });
+  
+  // Node type change handlers to ensure different types in bipartite mode
+  document.getElementById('nodeType1').addEventListener('change', function() {
+    const networkType = document.getElementById('networkType').value;
+    if (networkType === 'bipartite') {
+      const nodeType2 = document.getElementById('nodeType2');
+      if (nodeType2.value === this.value) {
+        // Find a different option
+        const options = Array.from(nodeType2.options);
+        const differentOption = options.find(opt => opt.value !== this.value);
+        if (differentOption) {
+          nodeType2.value = differentOption.value;
+        }
+      }
+    }
+  });
+  
+  document.getElementById('nodeType2').addEventListener('change', function() {
+    const nodeType1 = document.getElementById('nodeType1');
+    if (nodeType1.value === this.value) {
+      // Find a different option for nodeType1
+      const options = Array.from(nodeType1.options);
+      const differentOption = options.find(opt => opt.value !== this.value);
+      if (differentOption) {
+        nodeType1.value = differentOption.value;
+      }
+    }
+  });
+  
+  // Slider value displays
   document.getElementById('minConnections').addEventListener('input', function() {
     document.getElementById('minConnectionsValue').textContent = this.value;
   });
   
+  document.getElementById('maxNodes').addEventListener('input', function() {
+    document.getElementById('maxNodesValue').textContent = this.value;
+  });
+  
+  // Update network button
   document.getElementById('updateNetwork').addEventListener('click', function() {
     if (window.appData) {
       buildNetwork();
     }
   });
   
+  // Reset view button
   document.getElementById('resetView').addEventListener('click', function() {
     if (window.resetNetworkView) {
       window.resetNetworkView();
