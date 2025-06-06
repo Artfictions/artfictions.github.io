@@ -53,7 +53,7 @@
     });
   });
 
-  const data={nodes:new vis.DataSet(nodes),edges:new vis.DataSet(edges)};
+  const data = {nodes, edges};
   const options={physics:{barnesHut:{damping:0.3}},layout:{improvedLayout:true},interaction:{hover:true}};
   new vis.Network(container,data,options);
 })();
