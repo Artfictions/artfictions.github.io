@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iberian &amp; Latin‑American Art Fictions – Novel Explorer</title>
+  <style>
+    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;margin:2rem;background:#fdfdfd;color:#222}
+    h1{font-size:1.8rem;margin-bottom:1rem}
+    fieldset{border:1px solid #ccc;padding:1rem;margin-bottom:1rem;border-radius:6px}
+    label{display:block;margin:0.4rem 0 0.2rem;font-weight:600}
+    input,select{width:100%;padding:0.4rem;font-size:1rem;border:1px solid #888;border-radius:4px}
+    button{padding:0.4rem 0.8rem;font-size:1rem;border:1px solid #888;border-radius:4px;background:#fafafa;cursor:pointer}
+    button:hover{background:#f0f0f0}
+    #results-count{margin-bottom:0.6rem;font-weight:600}
+    table{width:100%;border-collapse:collapse}
+    thead th{background:#eee;font-weight:700;padding:0.5rem;border-bottom:2px solid #bbb;text-align:left}
+    tbody td{padding:0.4rem;border-bottom:1px solid #ddd;vertical-align:top}
+    @media(min-width:700px){form{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem} fieldset{margin:0}}
+  </style>
+</head>
+<body>
+  <h1>Search Iberian &amp; Latin‑American Art Fictions</h1>
+
+  <form id="searchForm">
+    <fieldset>
+      <label for="titleInput">Title</label>
+      <input type="text" id="titleInput" placeholder="e.g. 33 Revoluciones">
+    </fieldset>
+    <fieldset>
+      <label for="authorInput">Author</label>
+      <input type="text" id="authorInput" placeholder="e.g. Canek Sánchez Guevara">
+    </fieldset>
+    <fieldset>
+      <label for="countryInput">Country</label>
+      <input type="text" id="countryInput" placeholder="e.g. Cuba">
+    </fieldset>
+    <fieldset>
+      <label for="languageInput">Language</label>
+      <input type="text" id="languageInput" placeholder="e.g. Spanish">
+    </fieldset>
+    <fieldset>
+      <label for="publisherInput">Publisher</label>
+      <input type="text" id="publisherInput" placeholder="e.g. Sudaquia">
+    </fieldset>
+    <fieldset>
+      <label for="yearInput">Year of Publication</label>
+      <input type="number" id="yearInput" placeholder="e.g. 2021" min="1900" max="2100">
+    </fieldset>
+    <fieldset>
+      <label for="themeInput">Theme</label>
+      <input type="text" id="themeInput" placeholder="e.g. Migration">
+    </fieldset>
+    <div style="grid-column:1/-1; text-align:right; margin-top:0.5rem">
+      <button type="reset" id="clearBtn">Clear filters</button>
+    </div>
+  </form>
+
+  <div id="results-count"></div>
+  <div style="overflow-x:auto">
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Country</th>
+          <th>Language</th>
+          <th>Publisher</th>
+          <th>Year</th>
+          <th>Themes</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+  (async function(){
+    // Load the JSON dataset – make sure "artfictions_novels.json" sits alongside this file
+    const response = await fetch('artfictions_novels.json');
+    let json;
+    try {
+      json = await response.json();
+    } catch(e) {
+      console.error('JSON parsing error:', e);
+      document.body.insertAdjacentHTML('beforeend','<p style="color:red">Failed to load dataset.</p>');
+      return;
+    }
+
+    const novels = Array.isArray(json) ? json : (Array.isArray(json.Novels) ? json.Novels : []);
+
+    // Flatten theme fields into an array for easier searching
+    novels.forEach(novel => {
+      const themes = [];
+      for (let i = 1; i <= 5; i++) {
+        const key = `Theme ${i}`;
+        if (novel[key]) {
+          const t = novel[key].trim();
+          if (t) themes.push(t);
+        }
+      }
+      novel.__themes = themes; // private helper field
+    });
+
+    const tbody   = document.querySelector('#resultsTable tbody');
+    const countEl = document.getElementById('results-count');
+
+    const inputs = {
+      title:     document.getElementById('titleInput'),
+      author:    document.getElementById('authorInput'),
+      country:   document.getElementById('countryInput'),
+      language:  document.getElementById('languageInput'),
+      publisher: document.getElementById('publisherInput'),
+      year:      document.getElementById('yearInput'),
+      theme:     document.getElementById('themeInput')
+    };
+
+    Object.values(inputs).forEach(inp => inp.addEventListener('input', filterAndRender));
+    document.getElementById('searchForm').addEventListener('reset', () => {
+      setTimeout(filterAndRender, 0); // wait for the form to actually reset
+    });
+
+    function fieldMatch(field, query) {
+      if (!query) return true;              // empty filter – match anything
+      if (!field) return false;             // no data – fail
+      return field.toString().toLowerCase().includes(query);
+    }
+
+    function themeMatch(themeArr, query) {
+      if (!query) return true;
+      const q = query.toLowerCase();
+      return themeArr.some(t => t.toLowerCase().includes(q));
+    }
+
+    function filterData() {
+      const q = {
+        title:     inputs.title.value.trim().toLowerCase(),
+        author:    inputs.author.value.trim().toLowerCase(),
+        country:   inputs.country.value.trim().toLowerCase(),
+        language:  inputs.language.value.trim().toLowerCase(),
+        publisher: inputs.publisher.value.trim().toLowerCase(),
+        year:      inputs.year.value.trim(),
+        theme:     inputs.theme.value.trim().toLowerCase()
+      };
+
+      return novels.filter(novel =>
+        fieldMatch(novel.Title,               q.title)     &&
+        fieldMatch(novel.Author,              q.author)    &&
+        fieldMatch(novel.Country,             q.country)   &&
+        fieldMatch(novel.Language,            q.language)  &&
+        fieldMatch(novel.Publisher,           q.publisher) &&
+        (q.year ? String(novel['Year of Publication']) === q.year : true) &&
+        themeMatch(novel.__themes,            q.theme)
+      );
+    }
+
+    function render(results) {
+      tbody.innerHTML = '';
+      results.forEach(novel => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${novel.Title || ''}</td>
+          <td>${novel.Author || ''}</td>
+          <td>${novel.Country || ''}</td>
+          <td>${novel.Language || ''}</td>
+          <td>${novel.Publisher || ''}</td>
+          <td>${novel['Year of Publication'] || ''}</td>
+          <td>${novel.__themes.join(', ')}</td>`;
+        tbody.appendChild(row);
+      });
+      countEl.textContent = `Showing ${results.length} of ${novels.length} novels`;
+    }
+
+    function filterAndRender() {
+      const results = filterData();
+      render(results);
+    }
+
+    // Initial render
+    filterAndRender();
+  })();
+  </script>
+</body>
+</html>
