@@ -4,60 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Artfictions</title>
-  <style>
-    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;margin:2rem;background:#fdfdfd;color:#222}
-    h1{font-size:1.9rem;margin-bottom:1rem}
-    fieldset{border:1px solid #ccc;padding:1rem;margin-bottom:1rem;border-radius:6px}
-    label{display:block;margin:0.4rem 0 0.2rem;font-weight:600}
-    input,select{width:100%;padding:0.45rem;font-size:1rem;border:1px solid #888;border-radius:4px}
-    input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-    input[type=number]{-moz-appearance:textfield}
-    button{padding:0.45rem 0.9rem;font-size:1rem;border:1px solid #888;border-radius:4px;background:#fafafa;cursor:pointer}
-    button:hover{background:#f0f0f0}
-    #results-count{margin-bottom:0.6rem;font-weight:600}
-    table{width:100%;border-collapse:collapse}
-    thead th{background:#eee;font-weight:700;padding:0.55rem;border-bottom:2px solid #bbb;text-align:left}
-    tbody td{padding:0.45rem;border-bottom:1px solid #ddd;vertical-align:top}
-    #error{color:#b00;font-weight:600;margin:0.8rem 0}
-    .checkbox-group{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.2rem;margin-top:0.5rem}
-    .checkbox-group label{display:inline-block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:normal;margin:0;padding:0.2rem 0}
-    .checkbox-group input{margin-right:0.3rem;width:auto}
-    @media(min-width:720px){form{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem} fieldset{margin:0}}
-  </style>
+  <!-- Fonts & external stylesheet -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+<main>
   <h1>Iberian & Latin American Artfiction</h1>
 
   <form id="searchForm">
     <fieldset>
-      <label for="titleInput">Title</label>
+      <label class="field-title" for="titleInput">Title</label>
       <input type="text" id="titleInput" placeholder="e.g. 33 Revoluciones">
     </fieldset>
     <fieldset>
-      <label for="authorInput">Author</label>
+      <label class="field-title" for="authorInput">Author</label>
       <input type="text" id="authorInput" placeholder="e.g. Canek Sánchez Guevara">
     </fieldset>
     <fieldset>
-      <label for="countryInput">Country</label>
+      <label class="field-title" for="countryInput">Country</label>
       <input type="text" id="countryInput" placeholder="e.g. Cuba">
     </fieldset>
     <fieldset>
-      <label for="languageInput">Language</label>
+      <label class="field-title" for="languageInput">Language</label>
       <input type="text" id="languageInput" placeholder="e.g. Spanish">
     </fieldset>
     <fieldset>
-      <label for="publisherInput">Publisher</label>
+      <label class="field-title" for="publisherInput">Publisher</label>
       <input type="text" id="publisherInput" placeholder="e.g. Sudaquia">
     </fieldset>
     <fieldset>
-      <label for="yearInput">Year of Publication</label>
-      <input type="text" id="yearInput" placeholder="e.g. 2015 or 2010–2020">
+      <label class="field-title" for="yearInput">Year of Publication</label>
+      <input type="text" id="yearInput" placeholder="2015 or 2010–2020">
     </fieldset>
     <fieldset style="grid-column:1/-1">
-      <label>Theme(s)</label>
+      <label class="field-title">Theme(s)</label>
       <div id="themeCheckboxes" class="checkbox-group"></div>
     </fieldset>
-    <div style="grid-column:1/-1;text-align:right;margin-top:0.5rem">
+    <div style="grid-column:1/-1;text-align:right">
       <button type="reset" id="clearBtn">Clear filters</button>
     </div>
   </form>
@@ -68,140 +53,76 @@
     <table id="resultsTable">
       <thead>
         <tr>
-          <th>Title</th>
-          <th>Author</th>
-          <th>Country</th>
-          <th>Language</th>
-          <th>Publisher</th>
-          <th>Year</th>
-          <th>Themes</th>
+          <th>Title</th><th>Author</th><th>Country</th><th>Language</th>
+          <th>Publisher</th><th>Year</th><th>Themes</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </div>
+</main>
 
-  <script>
-  (async function(){
-    const DATA_URL = 'artfictions_novels.json';
-    const errEl   = document.getElementById('error');
-    const tbody   = document.querySelector('#resultsTable tbody');
-    const countEl = document.getElementById('results-count');
+<script>
+(async function(){
+  const DATA_URL='artfictions_novels.json';
+  const errEl=document.getElementById('error');
+  const tbody=document.querySelector('#resultsTable tbody');
+  const countEl=document.getElementById('results-count');
+  function showError(msg){errEl.textContent=msg;errEl.hidden=false;}
 
-    function showError(msg){
-      errEl.textContent = msg;
-      errEl.hidden = false;
-    }
+  let novels;
+  try{
+    const res=await fetch(DATA_URL);
+    if(!res.ok)throw new Error(res.status);
+    novels=await res.json();
+  }catch(e){console.error(e);showError('Dataset load failed');return;}
 
-    let novels;
-    try {
-      const response = await fetch(DATA_URL);
-      if(!response.ok){ throw new Error(`(${response.status}) ${response.statusText}`); }
-      novels = await response.json();
-    } catch (e) {
-      console.error(e);
-      showError('⚠️ Failed to load dataset – please check that '+DATA_URL+' is present and valid JSON.');
-      return;
-    }
+  if(!Array.isArray(novels)){
+    const key=Object.keys(novels).find(k=>Array.isArray(novels[k]));
+    novels=key?novels[key]:[];
+  }
+  novels.forEach(n=>{const t=[];for(let i=1;i<=5;i++){const k=`Theme ${i}`;if(n[k])t.push(n[k].trim());}n.__themes=t;});
 
-    if(!Array.isArray(novels)){
-      const keys = Object.keys(novels);
-      const firstArrayKey = keys.find(k => Array.isArray(novels[k]));
-      novels = firstArrayKey ? novels[firstArrayKey] : [];
-    }
+  /* Build theme pills */
+  const themeSet=new Set();novels.forEach(n=>n.__themes.forEach(t=>themeSet.add(t)));
+  const allThemes=[...themeSet].sort();
+  const themeBox=document.getElementById('themeCheckboxes');
+  allThemes.forEach(theme=>{
+    const label=document.createElement('label');
+    label.innerHTML=`<input type=\"checkbox\" value=\"${theme}\" name=\"themeBox\"><span>${theme}</span>`;
+    themeBox.appendChild(label);
+  });
 
-    novels.forEach(novel => {
-      const themes=[];
-      for(let i=1;i<=5;i++){
-        const key=`Theme ${i}`;
-        if(novel[key]){const t=novel[key].trim();if(t)themes.push(t);} }
-      novel.__themes=themes;
-    });
+  const inputs={
+    title:document.getElementById('titleInput'),
+    author:document.getElementById('authorInput'),
+    country:document.getElementById('countryInput'),
+    language:document.getElementById('languageInput'),
+    publisher:document.getElementById('publisherInput'),
+    year:document.getElementById('yearInput'),
+  };
+  const themeInputs=[...document.querySelectorAll('input[name="themeBox"]')];
+  [...Object.values(inputs),...themeInputs].forEach(el=>el.addEventListener('input',filterAndRender));
+  document.getElementById('searchForm').addEventListener('reset',()=>setTimeout(filterAndRender,0));
 
-    const themeSet = new Set();
-    novels.forEach(n => n.__themes.forEach(t => themeSet.add(t)));
-    const allThemes = [...themeSet].sort();
+  function fMatch(val,q){return !q||val&&val.toLowerCase().includes(q);}  // substring match
+  function yMatch(y,q){if(!q)return true;const m=q.match(/^(\\d{4})(?:\\s*[\\u2013\\-]\\s*(\\d{4}))?$/);if(!m)return false;const start=parseInt(m[1]);const end=m[2]?parseInt(m[2]):start;const n=parseInt(y);return n>=start&&n<=end;}
+  function tMatch(arr,sel){return sel.length===0||sel.every(t=>arr.includes(t));}
 
-    const themeCheckboxes = document.getElementById('themeCheckboxes');
-    allThemes.forEach(theme => {
-      const id = 'theme-' + theme.replace(/[^a-z0-9]/gi, '_');
-      const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox" value="${theme}" name="themeBox"> ${theme}`;
-      themeCheckboxes.appendChild(label);
-    });
+  function filter(){const q={
+    title:inputs.title.value.trim().toLowerCase(),
+    author:inputs.author.value.trim().toLowerCase(),
+    country:inputs.country.value.trim().toLowerCase(),
+    language:inputs.language.value.trim().toLowerCase(),
+    publisher:inputs.publisher.value.trim().toLowerCase(),
+    year:inputs.year.value.trim(),
+    themes:themeInputs.filter(b=>b.checked).map(b=>b.value)
+  };return novels.filter(n=>fMatch(n.Title,q.title)&&fMatch(n.Author,q.author)&&fMatch(n.Country,q.country)&&fMatch(n.Language,q.language)&&fMatch(n.Publisher,q.publisher)&&yMatch(n['Year of Publication'],q.year)&&tMatch(n.__themes,q.themes));}
 
-    const inputs = {
-      title:     document.getElementById('titleInput'),
-      author:    document.getElementById('authorInput'),
-      country:   document.getElementById('countryInput'),
-      language:  document.getElementById('languageInput'),
-      publisher: document.getElementById('publisherInput'),
-      year:      document.getElementById('yearInput'),
-    };
-
-    const themeBoxes = [...document.querySelectorAll('input[name="themeBox"]')];
-    [...Object.values(inputs), ...themeBoxes].forEach(inp => inp.addEventListener('input', filterAndRender));
-    document.getElementById('searchForm').addEventListener('reset', () => setTimeout(filterAndRender,0));
-
-    function fieldMatch(field, query){
-      if(!query) return true;
-      if(!field) return false;
-      return field.toString().toLowerCase().includes(query);
-    }
-
-    function yearMatch(novelYear, query){
-      if(!query) return true;
-      const match = query.match(/^(\d{4})(?:\s*[–-]\s*(\d{4}))?$/);
-      if(!match) return false;
-      const y = parseInt(novelYear);
-      const start = parseInt(match[1]);
-      const end = match[2] ? parseInt(match[2]) : start;
-      return y >= start && y <= end;
-    }
-
-    function themeMatch(themeArr, selectedThemes){
-      if(selectedThemes.length === 0) return true;
-      return selectedThemes.every(t => themeArr.includes(t));
-    }
-
-    function filterData(){
-      const q={
-        title:     inputs.title.value.trim().toLowerCase(),
-        author:    inputs.author.value.trim().toLowerCase(),
-        country:   inputs.country.value.trim().toLowerCase(),
-        language:  inputs.language.value.trim().toLowerCase(),
-        publisher: inputs.publisher.value.trim().toLowerCase(),
-        year:      inputs.year.value.trim(),
-        themes:    themeBoxes.filter(box => box.checked).map(b => b.value)
-      };
-
-      return novels.filter(novel =>
-        fieldMatch(novel.Title,               q.title)     &&
-        fieldMatch(novel.Author,              q.author)    &&
-        fieldMatch(novel.Country,             q.country)   &&
-        fieldMatch(novel.Language,            q.language)  &&
-        fieldMatch(novel.Publisher,           q.publisher) &&
-        yearMatch(novel['Year of Publication'], q.year)    &&
-        themeMatch(novel.__themes,            q.themes)
-      );
-    }
-
-    function render(results){
-      tbody.innerHTML='';
-      results.forEach(novel=>{
-        const row=document.createElement('tr');
-        row.innerHTML=`<td>${novel.Title||''}</td><td>${novel.Author||''}</td><td>${novel.Country||''}</td><td>${novel.Language||''}</td><td>${novel.Publisher||''}</td><td>${novel['Year of Publication']||''}</td><td>${novel.__themes.join(', ')}</td>`;
-        tbody.appendChild(row);
-      });
-      countEl.textContent=`Showing ${results.length} of ${novels.length} novels`;
-    }
-
-    function filterAndRender(){
-      render(filterData());
-    }
-
-    filterAndRender();
-  })();
-  </script>
+  function render(rows){tbody.innerHTML='';rows.forEach(n=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${n.Title||''}</td><td>${n.Author||''}</td><td>${n.Country||''}</td><td>${n.Language||''}</td><td>${n.Publisher||''}</td><td>${n['Year of Publication']||''}</td><td>${n.__themes.join(', ')}</td>`;tbody.appendChild(tr);});countEl.textContent=`Showing ${rows.length} of ${novels.length}`;}
+  function filterAndRender(){render(filter());}
+  filterAndRender();
+})();
+</script>
 </body>
 </html>
