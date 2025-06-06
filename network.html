@@ -279,6 +279,12 @@
 
 <script>
 (async function() {
+  // Check if D3 is loaded
+  if (typeof d3 === 'undefined') {
+    document.getElementById('analysis-content').innerHTML = '<p style="color: #b00;">D3.js library failed to load. Please refresh the page.</p>';
+    return;
+  }
+  
   const DATA_URL = 'artfictions_novels.json';
   
   // Load and process data
@@ -315,6 +321,9 @@
     n.__author = n.Author ? n.Author.trim() : 'Unknown';
   });
   
+  console.log(`Processed ${novels.length} novels`);
+  console.log('Sample novel:', novels[0]);
+  
   // Get data for different node types
   function getNodeData(nodeType) {
     switch(nodeType) {
@@ -339,102 +348,106 @@
   
   // Build single node type network (co-occurrence)
   function buildSingleNodeNetwork(nodeType, minConnections, maxNodes) {
-    const nodeFreq = new Map();
-    const nodeCooccurrence = new Map();
-    
-    novels.forEach(novel => {
-      let items = [];
+    try {
+      const nodeFreq = new Map();
+      const nodeCooccurrence = new Map();
+      
+      console.log(`Building single node network for: ${nodeType}`);
       
       if (nodeType === 'themes') {
-        items = novel.__themes;
+        // For themes, count co-occurrences within novels
+        novels.forEach(novel => {
+          const themes = novel.__themes;
+          
+          // Count frequencies
+          themes.forEach(theme => {
+            nodeFreq.set(theme, (nodeFreq.get(theme) || 0) + 1);
+          });
+          
+          // Count co-occurrences within the same novel
+          for (let i = 0; i < themes.length; i++) {
+            for (let j = i + 1; j < themes.length; j++) {
+              const pair = [themes[i], themes[j]].sort().join('|');
+              nodeCooccurrence.set(pair, (nodeCooccurrence.get(pair) || 0) + 1);
+            }
+          }
+        });
       } else {
-        // For other node types, we look at co-occurrence through shared novels
-        const primaryItem = getNovelProperty(novel, nodeType);
-        if (primaryItem && primaryItem !== 'Unknown') {
-          items = [primaryItem];
-        }
+        // For other node types, calculate frequency first
+        novels.forEach(novel => {
+          const item = getNovelProperty(novel, nodeType);
+          if (item && item !== 'Unknown' && item !== '') {
+            nodeFreq.set(item, (nodeFreq.get(item) || 0) + 1);
+          }
+        });
+        
+        // Then find co-occurrences through shared themes
+        novels.forEach(novel => {
+          const item = getNovelProperty(novel, nodeType);
+          if (item && item !== 'Unknown' && item !== '' && novel.__themes.length > 0) {
+            // For each theme this item appears with
+            novel.__themes.forEach(theme => {
+              // Find other items that also appear with this theme
+              novels.forEach(otherNovel => {
+                const otherItem = getNovelProperty(otherNovel, nodeType);
+                if (otherItem && otherItem !== 'Unknown' && otherItem !== '' && 
+                    otherItem !== item && otherNovel.__themes.includes(theme)) {
+                  const pair = [item, otherItem].sort().join('|');
+                  nodeCooccurrence.set(pair, (nodeCooccurrence.get(pair) || 0) + 1);
+                }
+              });
+            });
+          }
+        });
       }
       
-      // Count frequencies
-      items.forEach(item => {
-        nodeFreq.set(item, (nodeFreq.get(item) || 0) + 1);
+      console.log(`Found ${nodeFreq.size} unique ${nodeType}, ${nodeCooccurrence.size} co-occurrence pairs`);
+      
+      // Create nodes (top N by frequency)
+      const topNodes = Array.from(nodeFreq.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, maxNodes)
+        .map(([item, freq]) => ({
+          id: item,
+          frequency: freq,
+          type: nodeType,
+          connections: 0
+        }));
+      
+      const nodeIds = new Set(topNodes.map(n => n.id));
+      
+      // Create links
+      const links = Array.from(nodeCooccurrence.entries())
+        .filter(([pair, weight]) => {
+          const [source, target] = pair.split('|');
+          return weight >= minConnections && nodeIds.has(source) && nodeIds.has(target);
+        })
+        .map(([pair, weight]) => {
+          const [source, target] = pair.split('|');
+          return { source, target, weight };
+        });
+      
+      console.log(`Created ${topNodes.length} nodes, ${links.length} links`);
+      
+      // Count connections per node
+      const connectionCounts = new Map();
+      links.forEach(link => {
+        connectionCounts.set(link.source, (connectionCounts.get(link.source) || 0) + 1);
+        connectionCounts.set(link.target, (connectionCounts.get(link.target) || 0) + 1);
       });
       
-      // For themes, count within-novel co-occurrences
-      if (nodeType === 'themes') {
-        for (let i = 0; i < items.length; i++) {
-          for (let j = i + 1; j < items.length; j++) {
-            const pair = [items[i], items[j]].sort().join('|');
-            nodeCooccurrence.set(pair, (nodeCooccurrence.get(pair) || 0) + 1);
-          }
-        }
-      }
-    });
-    
-    // For non-theme nodes, calculate co-occurrence differently
-    if (nodeType !== 'themes') {
-      const itemNovels = new Map();
-      novels.forEach((novel, idx) => {
-        const item = getNovelProperty(novel, nodeType);
-        if (item && item !== 'Unknown') {
-          if (!itemNovels.has(item)) itemNovels.set(item, []);
-          itemNovels.get(item).push(idx);
-        }
+      // Filter nodes that have connections
+      const filteredNodes = topNodes.filter(node => {
+        node.connections = connectionCounts.get(node.id) || 0;
+        return node.connections > 0 || nodeType === 'themes'; // Always include themes even without connections
       });
       
-      // Find items that share novels
-      const itemArray = Array.from(itemNovels.keys());
-      for (let i = 0; i < itemArray.length; i++) {
-        for (let j = i + 1; j < itemArray.length; j++) {
-          const item1Novels = itemNovels.get(itemArray[i]);
-          const item2Novels = itemNovels.get(itemArray[j]);
-          const sharedNovels = item1Novels.filter(n => item2Novels.includes(n));
-          if (sharedNovels.length > 0) {
-            const pair = [itemArray[i], itemArray[j]].sort().join('|');
-            nodeCooccurrence.set(pair, sharedNovels.length);
-          }
-        }
-      }
+      return { nodes: filteredNodes, links, networkType: 'single' };
+      
+    } catch (error) {
+      console.error('Error in buildSingleNodeNetwork:', error);
+      throw error;
     }
-    
-    // Create nodes (top N by frequency)
-    const topNodes = Array.from(nodeFreq.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, maxNodes)
-      .map(([item, freq]) => ({
-        id: item,
-        frequency: freq,
-        type: nodeType,
-        connections: 0
-      }));
-    
-    const nodeIds = new Set(topNodes.map(n => n.id));
-    
-    // Create links
-    const links = Array.from(nodeCooccurrence.entries())
-      .filter(([pair, weight]) => {
-        const [source, target] = pair.split('|');
-        return weight >= minConnections && nodeIds.has(source) && nodeIds.has(target);
-      })
-      .map(([pair, weight]) => {
-        const [source, target] = pair.split('|');
-        return { source, target, weight };
-      });
-    
-    // Count connections per node
-    const connectionCounts = new Map();
-    links.forEach(link => {
-      connectionCounts.set(link.source, (connectionCounts.get(link.source) || 0) + 1);
-      connectionCounts.set(link.target, (connectionCounts.get(link.target) || 0) + 1);
-    });
-    
-    // Filter nodes that have connections
-    const filteredNodes = topNodes.filter(node => {
-      node.connections = connectionCounts.get(node.id) || 0;
-      return node.connections > 0;
-    });
-    
-    return { nodes: filteredNodes, links, networkType: 'single' };
   }
   
   // Build bipartite network
@@ -810,24 +823,45 @@
   }
   
   function updateVisualization() {
-    const networkType = networkTypeSelect.value;
-    const nodeType1 = nodeType1Select.value;
-    const nodeType2 = nodeType2Select.value;
-    const minConnections = parseInt(minConnectionsSlider.value);
-    const nodeSizeMultiplier = parseFloat(nodeSizeSlider.value);
-    const maxNodes = parseInt(maxNodesSlider.value);
-    
-    let data;
-    if (networkType === 'bipartite') {
-      data = buildBipartiteNetwork(nodeType1, nodeType2, minConnections, maxNodes);
-    } else {
-      data = buildSingleNodeNetwork(nodeType1, minConnections, maxNodes);
+    try {
+      // Show loading state
+      document.getElementById('analysis-content').innerHTML = '<p>Generating network...</p>';
+      
+      const networkType = networkTypeSelect.value;
+      const nodeType1 = nodeType1Select.value;
+      const nodeType2 = nodeType2Select.value;
+      const minConnections = parseInt(minConnectionsSlider.value);
+      const nodeSizeMultiplier = parseFloat(nodeSizeSlider.value);
+      const maxNodes = parseInt(maxNodesSlider.value);
+      
+      console.log('Building network:', { networkType, nodeType1, nodeType2, minConnections, maxNodes });
+      
+      let data;
+      if (networkType === 'bipartite') {
+        data = buildBipartiteNetwork(nodeType1, nodeType2, minConnections, maxNodes);
+      } else {
+        data = buildSingleNodeNetwork(nodeType1, minConnections, maxNodes);
+      }
+      
+      console.log('Network data:', data);
+      
+      if (!data.nodes || data.nodes.length === 0) {
+        document.getElementById('analysis-content').innerHTML = '<p style="color: #b00;">No nodes found with current settings. Try reducing minimum connections or increasing max nodes.</p>';
+        return;
+      }
+      
+      // Store data globally for resize handling
+      window.currentNetworkData = data;
+      
+      createNetwork(data, nodeSizeMultiplier);
+      updateStats(data);
+      updateLegend(data);
+      generateAnalysis(data);
+      
+    } catch (error) {
+      console.error('Error in updateVisualization:', error);
+      document.getElementById('analysis-content').innerHTML = `<p style="color: #b00;">Error: ${error.message}</p>`;
     }
-    
-    createNetwork(data, nodeSizeMultiplier);
-    updateStats(data);
-    updateLegend(data);
-    generateAnalysis(data);
   }
   
   // Event listeners
@@ -855,6 +889,14 @@
   
   // Initial setup
   updateNodeType2Visibility();
+  
+  // Auto-generate initial network
+  try {
+    updateVisualization();
+  } catch (error) {
+    console.error('Error generating initial network:', error);
+    document.getElementById('analysis-content').innerHTML = '<p style="color: #b00;">Error generating network. Check console for details.</p>';
+  }
   
   // Handle window resize
   window.addEventListener('resize', () => {
