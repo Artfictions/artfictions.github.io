@@ -28,12 +28,11 @@ input[type=number]{-moz-appearance:textfield}
 button{padding:0.6rem 1.1rem;font-size:1rem;border:1px solid #000;background:#000;color:#fff;cursor:pointer;transition:filter .15s;border-radius:0}
 button:hover{filter:brightness(1.15)}
 
-/* ------- Theme pills ------- */
-.checkbox-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.4rem;margin-top:0.4rem}
-.checkbox-group input{display:none}
-.checkbox-group span{display:block;border:1px solid var(--grey-mid);border-radius:9999px;padding:.38rem .9rem;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;background:transparent;color:var(--grey-dark);transition:all .15s}
-.checkbox-group input:checked+span{background:#000;color:#fff;border-color:#000}
-.checkbox-group span:hover{border-color:#000}
+/* ------- Theme list (bullets) ------- */
+.checkbox-group{column-count:3;column-gap:1.5rem;margin-top:0.4rem}
+.checkbox-group label{display:block;break-inside:avoid;margin-bottom:.35rem;font-size:.9rem;color:var(--grey-dark);cursor:pointer}
+.checkbox-group input{margin-right:.5rem}
+.checkbox-group span{display:inline;white-space:normal;padding:0;margin:0;border:none}
 
 /* ------- Results table ------- */
 #results-count{margin:1.1rem 0 .8rem;font-weight:600}
