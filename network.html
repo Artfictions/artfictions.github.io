@@ -143,6 +143,41 @@
       margin: 1rem 0;
       font-weight: 600;
     }
+    
+    .info-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin: 2rem 0;
+    }
+    
+    .description-panel {
+      background: var(--grey-light);
+      padding: 1.5rem;
+      border-radius: 4px;
+    }
+    
+    .description-panel h2 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+    
+    .description-panel p {
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+    
+    .description-panel strong {
+      color: var(--fg);
+      font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+      .info-columns {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -159,8 +194,8 @@
     <div class="control-group">
       <label for="networkType">Network type</label>
       <select id="networkType">
-        <option value="single">Single type (co-occurrence)</option>
-        <option value="bipartite">Two types (relationships)</option>
+        <option value="single">Unipartite (within-type connections)</option>
+        <option value="bipartite">Bipartite (between-type connections)</option>
       </select>
     </div>
     
@@ -200,8 +235,8 @@
       <span id="maxNodesValue">30</span>
     </div>
     
-    <button type="button" id="updateNetwork">Update Network</button>
     <button type="button" id="resetView">Reset View</button>
+    <button type="button" id="updateNetwork">Update Network</button>
   </div>
   
   <div class="stats" id="stats"></div>
@@ -211,12 +246,31 @@
     <div class="tooltip" id="tooltip"></div>
   </div>
   
-  <div id="debug" class="debug"></div>
-  
-  <div id="analysis">
-    <h2>Analysis</h2>
-    <div id="analysis-content">
-      <p>Network will appear here once loaded...</p>
+  <div class="info-columns">
+    <div class="description-panel">
+      <h2>Configuration Guide</h2>
+      <p><strong>Network type:</strong></p>
+      <p>• <em>Unipartite:</em> Shows connections within one category (e.g., which themes appear together in the same novels)</p>
+      <p>• <em>Bipartite:</em> Shows connections between two different categories (e.g., which themes are associated with which authors)</p>
+      
+      <p><strong>Node selection:</strong></p>
+      <p>• <em>Primary nodes:</em> The main category to analyze</p>
+      <p>• <em>Secondary nodes:</em> Second category (bipartite only)</p>
+      
+      <p><strong>Filtering controls:</strong></p>
+      <p>• <em>Minimum connections:</em> Hide weak relationships. Start low (1-2) and increase to simplify</p>
+      <p>• <em>Max nodes:</em> Limit total nodes shown. For bipartite, this is split between both types</p>
+      
+      <p><strong>Interaction:</strong></p>
+      <p>• Drag nodes to rearrange</p>
+      <p>• Hover to highlight connections</p>
+      <p>• Scroll to zoom, drag background to pan</p>
+      <p>• Use Reset View to recenter</p>
+    </div>
+    
+    <div class="debug">
+      <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem;">Debug Log</h2>
+      <div id="debug"></div>
     </div>
   </div>
 </main>
@@ -227,7 +281,9 @@
 function debug(message, data = null) {
   console.log(message, data);
   const debugEl = document.getElementById('debug');
-  debugEl.innerHTML += `<div>${message} ${data ? JSON.stringify(data).substring(0, 100) : ''}</div>`;
+  if (debugEl) {
+    debugEl.innerHTML += `<div>${message} ${data ? JSON.stringify(data).substring(0, 100) : ''}</div>`;
+  }
 }
 
 function updateStatus(message) {
@@ -296,15 +352,6 @@ async function init() {
   } catch (error) {
     debug('✗ Error:', error.message);
     updateStatus(`Error: ${error.message}`);
-    document.getElementById('analysis-content').innerHTML = `
-      <p style="color: #b00;">Failed to load network: ${error.message}</p>
-      <p>Please check that:</p>
-      <ul>
-        <li>The artfictions_novels.json file is in the same directory</li>
-        <li>Your browser supports modern JavaScript</li>
-        <li>You're viewing this through a web server (not file://)</li>
-      </ul>
-    `;
   }
 }
 
@@ -340,7 +387,6 @@ function buildNetwork() {
     // Visualize
     visualizeNetwork(data);
     updateStats(data.nodes, data.links);
-    generateAnalysis(data.nodes, data.links, networkType, nodeType1, nodeType2);
     
     updateStatus(`✓ ${networkType} network ready`);
     
@@ -734,78 +780,6 @@ function updateStats(nodes, links) {
       <div class="stat-label">Avg Connections</div>
     </div>
   `;
-}
-
-function generateAnalysis(nodes, links, networkType, nodeType1, nodeType2) {
-  const topNodes = nodes
-    .sort((a, b) => b.connections - a.connections)
-    .slice(0, 5);
-  
-  const strongestLinks = links
-    .sort((a, b) => b.weight - a.weight)
-    .slice(0, 5);
-  
-  let analysisHTML = '';
-  
-  if (networkType === 'bipartite') {
-    // Separate nodes by type for bipartite networks
-    const type1Nodes = nodes.filter(n => n.nodeTypeIndex === 0);
-    const type2Nodes = nodes.filter(n => n.nodeTypeIndex === 1);
-    
-    const topType1 = type1Nodes
-      .sort((a, b) => b.connections - a.connections)
-      .slice(0, 3);
-    
-    const topType2 = type2Nodes
-      .sort((a, b) => b.connections - a.connections)
-      .slice(0, 3);
-    
-    analysisHTML = `
-      <h3>Most Connected ${nodeType1}</h3>
-      <ol>
-        ${topType1.map(node => 
-          `<li><strong>${node.id}</strong> - ${node.connections} connections to ${nodeType2}, appears in ${node.frequency} novels</li>`
-        ).join('')}
-      </ol>
-      
-      <h3>Most Connected ${nodeType2}</h3>
-      <ol>
-        ${topType2.map(node => 
-          `<li><strong>${node.id}</strong> - ${node.connections} connections to ${nodeType1}, appears in ${node.frequency} novels</li>`
-        ).join('')}
-      </ol>
-      
-      <h3>Strongest ${nodeType1}-${nodeType2} Relationships</h3>
-      <ol>
-        ${strongestLinks.map(link => 
-          `<li><strong>${link.source.id || link.source}</strong> ↔ <strong>${link.target.id || link.target}</strong> (${link.weight} novels)</li>`
-        ).join('')}
-      </ol>
-      
-      <p>This bipartite network reveals how ${nodeType1} and ${nodeType2} are connected through the artfiction corpus. The connections show which ${nodeType1} are most strongly associated with which ${nodeType2}.</p>
-    `;
-  } else {
-    // Single type network analysis
-    analysisHTML = `
-      <h3>Most Connected ${nodeType1}</h3>
-      <ol>
-        ${topNodes.map(node => 
-          `<li><strong>${node.id}</strong> - ${node.connections} connections, ${node.frequency} novels</li>`
-        ).join('')}
-      </ol>
-      
-      <h3>Strongest ${nodeType1} Relationships</h3>
-      <ol>
-        ${strongestLinks.map(link => 
-          `<li><strong>${link.source.id || link.source}</strong> ↔ <strong>${link.target.id || link.target}</strong> (${link.weight} novels)</li>`
-        ).join('')}
-      </ol>
-      
-      <p>The network reveals how ${nodeType1} cluster together in the artfiction corpus. Central ${nodeType1} act as bridges between different communities.</p>
-    `;
-  }
-  
-  document.getElementById('analysis-content').innerHTML = analysisHTML;
 }
 
 // Event listeners
