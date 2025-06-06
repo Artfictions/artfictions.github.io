@@ -7,11 +7,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <style>
     #network-container {
       width: 100%;
-      height: 80vh;
+      height: 70vh;
       border: 1px solid var(--grey-mid);
       border-radius: 4px;
       margin: 1rem 0;
@@ -25,54 +24,48 @@
     }
     
     .node {
-      stroke: var(--grey-dark);
-      stroke-width: 1.5px;
+      stroke: #333;
+      stroke-width: 2px;
       cursor: pointer;
       transition: all 0.3s ease;
     }
     
     .node:hover {
-      stroke-width: 3px;
+      stroke-width: 4px;
     }
     
-    .node-type-0 { fill: #1f77b4; }
-    .node-type-1 { fill: #ff7f0e; }
-    .node-bipartite { stroke-width: 2px; }
-    
     .link {
-      stroke: var(--grey-mid);
+      stroke: #999;
       stroke-opacity: 0.6;
-      transition: all 0.3s ease;
     }
     
     .node-label {
       font-family: Inter, sans-serif;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
       text-anchor: middle;
       pointer-events: none;
-      fill: var(--fg);
+      fill: #333;
     }
     
     .tooltip {
       position: absolute;
-      background: var(--fg);
-      color: var(--bg);
+      background: #333;
+      color: white;
       padding: 8px 12px;
       border-radius: 4px;
       font-size: 12px;
-      font-weight: 600;
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.3s ease;
       z-index: 1000;
-      max-width: 250px;
     }
     
     .controls {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 1rem;
+      align-items: center;
       margin: 1rem 0;
       padding: 1rem;
       background: var(--grey-light);
@@ -91,53 +84,9 @@
       color: var(--grey-dark);
     }
     
-    .control-group select, .control-group input[type="range"] {
-      padding: 0.5rem;
-      border: 1px solid var(--grey-mid);
-      border-radius: 4px;
-      background: var(--bg);
-      font-size: 0.9rem;
-    }
-    
-    .control-group input[type="range"] {
-      width: 100%;
-    }
-    
-    .control-buttons {
-      display: flex;
-      gap: 0.5rem;
-      grid-column: 1 / -1;
-      flex-wrap: wrap;
-    }
-    
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      align-items: center;
-      margin: 1rem 0;
-      padding: 1rem;
-      background: var(--grey-light);
-      border-radius: 4px;
-      font-size: 0.9rem;
-    }
-    
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .legend-circle {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 1px solid var(--grey-dark);
-    }
-    
     .stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 1rem;
       margin: 1rem 0;
     }
@@ -173,23 +122,22 @@
       text-decoration: underline;
     }
     
-    .description {
+    .debug {
+      background: #f8f8f8;
+      padding: 1rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+      font-family: monospace;
+      font-size: 0.9rem;
+      border-left: 4px solid #007acc;
+    }
+    
+    #status {
       background: var(--grey-light);
       padding: 1rem;
       border-radius: 4px;
       margin: 1rem 0;
-      font-size: 0.95rem;
-      line-height: 1.4;
-    }
-    
-    @media (max-width: 768px) {
-      .controls {
-        grid-template-columns: 1fr;
-      }
-      
-      #network-container {
-        height: 60vh;
-      }
+      font-weight: 600;
     }
   </style>
 </head>
@@ -197,719 +145,414 @@
 <main>
   <a href="index.html" class="back-link">← Back to Catalogue</a>
   
-  <h1>Network Analysis</h1>
+  <h1>Theme Network Analysis</h1>
   
-  <div class="description">
-    <p>Explore relationships within the artfiction corpus by creating networks of different data types. Choose what to analyse: theme co-occurrences, author-country relationships, publisher networks, or any combination of the database fields.</p>
-  </div>
+  <p>This network shows how themes co-occur across novels in the artfiction corpus. Nodes represent themes, and connections show themes that appear together in the same novels.</p>
+  
+  <div id="status">Loading...</div>
   
   <div class="controls">
     <div class="control-group">
-      <label for="networkType">Network type</label>
-      <select id="networkType">
-        <option value="single">Single node type (co-occurrence)</option>
-        <option value="bipartite">Two node types (relationships)</option>
-      </select>
-    </div>
-    
-    <div class="control-group">
-      <label for="nodeType1">Primary nodes</label>
-      <select id="nodeType1">
-        <option value="themes">Themes</option>
-        <option value="authors">Authors</option>
-        <option value="countries">Countries</option>
-        <option value="languages">Languages</option>
-        <option value="publishers">Publishers</option>
-        <option value="years">Years</option>
-      </select>
-    </div>
-    
-    <div class="control-group" id="nodeType2Group">
-      <label for="nodeType2">Secondary nodes</label>
-      <select id="nodeType2">
-        <option value="themes">Themes</option>
-        <option value="authors">Authors</option>
-        <option value="countries">Countries</option>
-        <option value="languages">Languages</option>
-        <option value="publishers">Publishers</option>
-        <option value="years">Years</option>
-      </select>
-    </div>
-    
-    <div class="control-group">
       <label for="minConnections">Minimum connections</label>
-      <input type="range" id="minConnections" min="1" max="20" value="2" step="1">
+      <input type="range" id="minConnections" min="1" max="10" value="2" step="1">
       <span id="minConnectionsValue">2</span>
     </div>
     
-    <div class="control-group">
-      <label for="nodeSize">Node size multiplier</label>
-      <input type="range" id="nodeSize" min="0.3" max="3" value="1" step="0.1">
-      <span id="nodeSizeValue">1.0</span>
-    </div>
-    
-    <div class="control-group">
-      <label for="maxNodes">Max nodes to show</label>
-      <input type="range" id="maxNodes" min="10" max="100" value="50" step="5">
-      <span id="maxNodesValue">50</span>
-    </div>
-    
-    <div class="control-buttons">
-      <button type="button" id="updateNetwork">Update Network</button>
-      <button type="button" id="resetZoom">Reset View</button>
-    </div>
+    <button type="button" id="updateNetwork">Update Network</button>
+    <button type="button" id="resetView">Reset View</button>
   </div>
   
   <div class="stats" id="stats"></div>
-  
-  <div class="legend" id="legend"></div>
   
   <div id="network-container">
     <svg id="network-svg"></svg>
     <div class="tooltip" id="tooltip"></div>
   </div>
   
-  <div id="analysis-text">
+  <div id="debug" class="debug"></div>
+  
+  <div id="analysis">
     <h2>Analysis</h2>
     <div id="analysis-content">
-      <p>Select network parameters and click "Update Network" to begin analysis.</p>
+      <p>Network will appear here once loaded...</p>
     </div>
   </div>
 </main>
 
+<script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
-(async function() {
-  // Check if D3 is loaded
-  if (typeof d3 === 'undefined') {
-    document.getElementById('analysis-content').innerHTML = '<p style="color: #b00;">D3.js library failed to load. Please refresh the page.</p>';
-    return;
-  }
-  
-  const DATA_URL = 'artfictions_novels.json';
-  
-  // Load and process data
-  let novels;
+// Debug function
+function debug(message, data = null) {
+  console.log(message, data);
+  const debugEl = document.getElementById('debug');
+  debugEl.innerHTML += `<div>${message} ${data ? JSON.stringify(data).substring(0, 100) : ''}</div>`;
+}
+
+function updateStatus(message) {
+  document.getElementById('status').textContent = message;
+}
+
+// Main application
+async function init() {
   try {
-    const res = await fetch(DATA_URL);
-    if (!res.ok) throw new Error(res.status);
-    novels = await res.json();
-  } catch (e) {
-    console.error(e);
-    document.getElementById('analysis-content').innerHTML = '<p style="color: #b00;">Failed to load data.</p>';
-    return;
-  }
-  
-  if (!Array.isArray(novels)) {
-    const key = Object.keys(novels).find(k => Array.isArray(novels[k]));
-    novels = key ? novels[key] : [];
-  }
-  
-  // Process novels data
-  novels.forEach(n => {
-    const themes = [];
-    for (let i = 1; i <= 5; i++) {
-      const theme = n[`Theme ${i}`];
-      if (theme && theme.trim()) {
-        themes.push(theme.trim());
-      }
+    updateStatus('Checking D3...');
+    
+    // Check if D3 loaded
+    if (typeof d3 === 'undefined') {
+      throw new Error('D3.js failed to load');
     }
-    n.__themes = themes;
-    n.__year = n['Year of Publication'] ? String(n['Year of Publication']).trim() : 'Unknown';
-    n.__country = n.Country ? n.Country.trim() : 'Unknown';
-    n.__language = n.Language ? n.Language.trim() : 'Unknown';
-    n.__publisher = n.Publisher ? n.Publisher.trim() : 'Unknown';
-    n.__author = n.Author ? n.Author.trim() : 'Unknown';
-  });
-  
-  console.log(`Processed ${novels.length} novels`);
-  console.log('Sample novel:', novels[0]);
-  
-  // Get data for different node types
-  function getNodeData(nodeType) {
-    switch(nodeType) {
-      case 'themes':
-        const allThemes = [];
-        novels.forEach(n => allThemes.push(...n.__themes));
-        return allThemes;
-      case 'authors':
-        return novels.map(n => n.__author);
-      case 'countries':
-        return novels.map(n => n.__country);
-      case 'languages':
-        return novels.map(n => n.__language);
-      case 'publishers':
-        return novels.map(n => n.__publisher);
-      case 'years':
-        return novels.map(n => n.__year).filter(y => y !== 'Unknown' && y !== '');
-      default:
-        return [];
-    }
-  }
-  
-  // Build single node type network (co-occurrence)
-  function buildSingleNodeNetwork(nodeType, minConnections, maxNodes) {
-    try {
-      const nodeFreq = new Map();
-      const nodeCooccurrence = new Map();
-      
-      console.log(`Building single node network for: ${nodeType}`);
-      
-      if (nodeType === 'themes') {
-        // For themes, count co-occurrences within novels
-        novels.forEach(novel => {
-          const themes = novel.__themes;
-          
-          // Count frequencies
-          themes.forEach(theme => {
-            nodeFreq.set(theme, (nodeFreq.get(theme) || 0) + 1);
-          });
-          
-          // Count co-occurrences within the same novel
-          for (let i = 0; i < themes.length; i++) {
-            for (let j = i + 1; j < themes.length; j++) {
-              const pair = [themes[i], themes[j]].sort().join('|');
-              nodeCooccurrence.set(pair, (nodeCooccurrence.get(pair) || 0) + 1);
-            }
-          }
-        });
-      } else {
-        // For other node types, calculate frequency first
-        novels.forEach(novel => {
-          const item = getNovelProperty(novel, nodeType);
-          if (item && item !== 'Unknown' && item !== '') {
-            nodeFreq.set(item, (nodeFreq.get(item) || 0) + 1);
-          }
-        });
-        
-        // Then find co-occurrences through shared themes
-        novels.forEach(novel => {
-          const item = getNovelProperty(novel, nodeType);
-          if (item && item !== 'Unknown' && item !== '' && novel.__themes.length > 0) {
-            // For each theme this item appears with
-            novel.__themes.forEach(theme => {
-              // Find other items that also appear with this theme
-              novels.forEach(otherNovel => {
-                const otherItem = getNovelProperty(otherNovel, nodeType);
-                if (otherItem && otherItem !== 'Unknown' && otherItem !== '' && 
-                    otherItem !== item && otherNovel.__themes.includes(theme)) {
-                  const pair = [item, otherItem].sort().join('|');
-                  nodeCooccurrence.set(pair, (nodeCooccurrence.get(pair) || 0) + 1);
-                }
-              });
-            });
-          }
-        });
-      }
-      
-      console.log(`Found ${nodeFreq.size} unique ${nodeType}, ${nodeCooccurrence.size} co-occurrence pairs`);
-      
-      // Create nodes (top N by frequency)
-      const topNodes = Array.from(nodeFreq.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, maxNodes)
-        .map(([item, freq]) => ({
-          id: item,
-          frequency: freq,
-          type: nodeType,
-          connections: 0
-        }));
-      
-      const nodeIds = new Set(topNodes.map(n => n.id));
-      
-      // Create links
-      const links = Array.from(nodeCooccurrence.entries())
-        .filter(([pair, weight]) => {
-          const [source, target] = pair.split('|');
-          return weight >= minConnections && nodeIds.has(source) && nodeIds.has(target);
-        })
-        .map(([pair, weight]) => {
-          const [source, target] = pair.split('|');
-          return { source, target, weight };
-        });
-      
-      console.log(`Created ${topNodes.length} nodes, ${links.length} links`);
-      
-      // Count connections per node
-      const connectionCounts = new Map();
-      links.forEach(link => {
-        connectionCounts.set(link.source, (connectionCounts.get(link.source) || 0) + 1);
-        connectionCounts.set(link.target, (connectionCounts.get(link.target) || 0) + 1);
-      });
-      
-      // Filter nodes that have connections
-      const filteredNodes = topNodes.filter(node => {
-        node.connections = connectionCounts.get(node.id) || 0;
-        return node.connections > 0 || nodeType === 'themes'; // Always include themes even without connections
-      });
-      
-      return { nodes: filteredNodes, links, networkType: 'single' };
-      
-    } catch (error) {
-      console.error('Error in buildSingleNodeNetwork:', error);
-      throw error;
-    }
-  }
-  
-  // Build bipartite network
-  function buildBipartiteNetwork(nodeType1, nodeType2, minConnections, maxNodes) {
-    if (nodeType1 === nodeType2) {
-      return buildSingleNodeNetwork(nodeType1, minConnections, maxNodes);
+    debug('✓ D3.js loaded successfully');
+    
+    updateStatus('Loading data...');
+    
+    // Load data
+    const response = await fetch('artfictions_novels.json');
+    if (!response.ok) {
+      throw new Error(`Failed to load data: ${response.status}`);
     }
     
-    const type1Freq = new Map();
-    const type2Freq = new Map();
-    const connections = new Map();
+    const data = await response.json();
+    debug('✓ Data loaded', { keys: Object.keys(data) });
     
-    novels.forEach(novel => {
-      const items1 = getNovelItems(novel, nodeType1);
-      const items2 = getNovelItems(novel, nodeType2);
+    let novels = Array.isArray(data) ? data : data.Novels || [];
+    if (!Array.isArray(novels)) {
+      throw new Error('Could not find novels array in data');
+    }
+    
+    debug(`✓ Found ${novels.length} novels`);
+    
+    updateStatus('Processing themes...');
+    
+    // Process themes
+    const themeFreq = new Map();
+    const themeCooccurrence = new Map();
+    
+    novels.forEach((novel, index) => {
+      const themes = [];
       
-      items1.forEach(item1 => {
-        type1Freq.set(item1, (type1Freq.get(item1) || 0) + 1);
-        items2.forEach(item2 => {
-          type2Freq.set(item2, (type2Freq.get(item2) || 0) + 1);
-          const key = `${item1}|${item2}`;
-          connections.set(key, (connections.get(key) || 0) + 1);
-        });
+      // Extract themes
+      for (let i = 1; i <= 5; i++) {
+        const theme = novel[`Theme ${i}`];
+        if (theme && theme.trim() && theme.trim() !== '') {
+          themes.push(theme.trim());
+        }
+      }
+      
+      if (themes.length === 0) return;
+      
+      // Count theme frequencies
+      themes.forEach(theme => {
+        themeFreq.set(theme, (themeFreq.get(theme) || 0) + 1);
       });
+      
+      // Count co-occurrences
+      for (let i = 0; i < themes.length; i++) {
+        for (let j = i + 1; j < themes.length; j++) {
+          const pair = [themes[i], themes[j]].sort().join('|||');
+          themeCooccurrence.set(pair, (themeCooccurrence.get(pair) || 0) + 1);
+        }
+      }
     });
     
-    // Get top nodes for each type
-    const topType1 = Array.from(type1Freq.entries())
+    debug(`✓ Found ${themeFreq.size} unique themes`);
+    debug(`✓ Found ${themeCooccurrence.size} theme pairs`);
+    
+    // Store data globally
+    window.appData = {
+      novels,
+      themeFreq,
+      themeCooccurrence
+    };
+    
+    updateStatus('Building network...');
+    buildNetwork();
+    
+  } catch (error) {
+    debug('✗ Error:', error.message);
+    updateStatus(`Error: ${error.message}`);
+    document.getElementById('analysis-content').innerHTML = `
+      <p style="color: #b00;">Failed to load network: ${error.message}</p>
+      <p>Please check that:</p>
+      <ul>
+        <li>The artfictions_novels.json file is in the same directory</li>
+        <li>Your browser supports modern JavaScript</li>
+        <li>You're viewing this through a web server (not file://)</li>
+      </ul>
+    `;
+  }
+}
+
+function buildNetwork() {
+  try {
+    const minConnections = parseInt(document.getElementById('minConnections').value);
+    const { themeFreq, themeCooccurrence } = window.appData;
+    
+    debug(`Building network with min connections: ${minConnections}`);
+    
+    // Create nodes (top 30 themes by frequency)
+    const nodes = Array.from(themeFreq.entries())
       .sort((a, b) => b[1] - a[1])
-      .slice(0, Math.floor(maxNodes / 2));
-    
-    const topType2 = Array.from(type2Freq.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, Math.floor(maxNodes / 2));
-    
-    const type1Ids = new Set(topType1.map(([id]) => id));
-    const type2Ids = new Set(topType2.map(([id]) => id));
-    
-    // Create nodes
-    const nodes = [
-      ...topType1.map(([id, freq]) => ({
-        id: id,
+      .slice(0, 30)
+      .map(([theme, freq]) => ({
+        id: theme,
         frequency: freq,
-        type: nodeType1,
-        nodeTypeIndex: 0,
         connections: 0
-      })),
-      ...topType2.map(([id, freq]) => ({
-        id: id,
-        frequency: freq,
-        type: nodeType2,
-        nodeTypeIndex: 1,
-        connections: 0
-      }))
-    ];
+      }));
+    
+    const nodeIds = new Set(nodes.map(n => n.id));
     
     // Create links
-    const links = Array.from(connections.entries())
-      .filter(([key, weight]) => {
-        const [item1, item2] = key.split('|');
-        return weight >= minConnections && type1Ids.has(item1) && type2Ids.has(item2);
+    const links = Array.from(themeCooccurrence.entries())
+      .filter(([pair, weight]) => {
+        const [source, target] = pair.split('|||');
+        return weight >= minConnections && nodeIds.has(source) && nodeIds.has(target);
       })
-      .map(([key, weight]) => {
-        const [source, target] = key.split('|');
+      .map(([pair, weight]) => {
+        const [source, target] = pair.split('|||');
         return { source, target, weight };
       });
     
-    // Count connections
+    debug(`Created ${nodes.length} nodes and ${links.length} links`);
+    
+    if (links.length === 0) {
+      updateStatus('No connections found - try reducing minimum connections');
+      return;
+    }
+    
+    // Count actual connections
     const connectionCounts = new Map();
     links.forEach(link => {
       connectionCounts.set(link.source, (connectionCounts.get(link.source) || 0) + 1);
       connectionCounts.set(link.target, (connectionCounts.get(link.target) || 0) + 1);
     });
     
-    // Filter nodes with connections
-    const filteredNodes = nodes.filter(node => {
+    nodes.forEach(node => {
       node.connections = connectionCounts.get(node.id) || 0;
-      return node.connections > 0;
     });
     
-    return { nodes: filteredNodes, links, networkType: 'bipartite' };
-  }
-  
-  function getNovelProperty(novel, type) {
-    switch(type) {
-      case 'themes': return novel.__themes[0]; // Just first theme
-      case 'authors': return novel.__author;
-      case 'countries': return novel.__country;
-      case 'languages': return novel.__language;
-      case 'publishers': return novel.__publisher;
-      case 'years': return novel.__year;
-      default: return null;
-    }
-  }
-  
-  function getNovelItems(novel, type) {
-    switch(type) {
-      case 'themes': return novel.__themes;
-      case 'authors': return [novel.__author].filter(x => x && x !== 'Unknown');
-      case 'countries': return [novel.__country].filter(x => x && x !== 'Unknown');
-      case 'languages': return [novel.__language].filter(x => x && x !== 'Unknown');
-      case 'publishers': return [novel.__publisher].filter(x => x && x !== 'Unknown');
-      case 'years': return [novel.__year].filter(x => x && x !== 'Unknown' && x !== '');
-      default: return [];
-    }
-  }
-  
-  // Network visualisation
-  function createNetwork(data, nodeSizeMultiplier = 1) {
-    const container = d3.select('#network-container');
-    const svg = d3.select('#network-svg');
-    const tooltip = d3.select('#tooltip');
+    // Filter nodes with connections
+    const connectedNodes = nodes.filter(n => n.connections > 0);
     
-    svg.selectAll('*').remove();
+    debug(`${connectedNodes.length} nodes have connections`);
     
-    const width = container.node().offsetWidth;
-    const height = container.node().offsetHeight;
+    // Visualize
+    visualizeNetwork({ nodes: connectedNodes, links });
+    updateStats(connectedNodes, links);
+    generateAnalysis(connectedNodes, links);
     
-    const simulation = d3.forceSimulation(data.nodes)
-      .force('link', d3.forceLink(data.links).id(d => d.id).distance(100))
-      .force('charge', d3.forceManyBody().strength(-400))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(d => Math.sqrt(d.frequency) * 8 * nodeSizeMultiplier + 5));
+    updateStatus('✓ Network ready');
     
-    // Add specific forces for bipartite networks
-    if (data.networkType === 'bipartite') {
-      simulation.force('x', d3.forceX(d => d.nodeTypeIndex === 0 ? width * 0.3 : width * 0.7).strength(0.1));
-    }
-    
-    // Add zoom behaviour
-    const zoom = d3.zoom()
-      .scaleExtent([0.1, 4])
-      .on('zoom', (event) => {
-        g.attr('transform', event.transform);
-      });
-    
-    svg.call(zoom);
-    
-    const g = svg.append('g');
-    
-    // Create links
-    const link = g.append('g')
-      .selectAll('line')
-      .data(data.links)
-      .join('line')
-      .attr('class', 'link')
-      .attr('stroke-width', d => Math.sqrt(d.weight) * 2);
-    
-    // Create nodes
-    const node = g.append('g')
-      .selectAll('circle')
-      .data(data.nodes)
-      .join('circle')
-      .attr('class', d => `node ${data.networkType === 'bipartite' ? 'node-bipartite' : ''} node-type-${d.nodeTypeIndex || 0}`)
-      .attr('r', d => Math.sqrt(d.frequency) * 8 * nodeSizeMultiplier)
-      .call(d3.drag()
-        .on('start', dragstarted)
-        .on('drag', dragged)
-        .on('end', dragended))
-      .on('mouseover', function(event, d) {
-        tooltip
-          .style('opacity', 1)
-          .style('left', (event.pageX + 10) + 'px')
-          .style('top', (event.pageY - 10) + 'px')
-          .html(`
-            <strong>${d.id}</strong><br>
-            Type: ${d.type}<br>
-            Frequency: ${d.frequency} novels<br>
-            Connections: ${d.connections}
-          `);
-        
-        // Highlight connected nodes and links
-        const connectedNodes = new Set();
-        connectedNodes.add(d.id);
-        
-        link
-          .style('stroke-opacity', l => 
-            (l.source.id === d.id || l.target.id === d.id) ? 1 : 0.1)
-          .style('stroke-width', l => 
-            (l.source.id === d.id || l.target.id === d.id) ? Math.sqrt(l.weight) * 3 : Math.sqrt(l.weight) * 2);
-        
-        data.links.forEach(l => {
-          if (l.source.id === d.id) connectedNodes.add(l.target.id);
-          if (l.target.id === d.id) connectedNodes.add(l.source.id);
-        });
-        
-        node.style('opacity', n => connectedNodes.has(n.id) ? 1 : 0.3);
-      })
-      .on('mouseout', function() {
-        tooltip.style('opacity', 0);
-        link.style('stroke-opacity', 0.6).style('stroke-width', d => Math.sqrt(d.weight) * 2);
-        node.style('opacity', 1);
-      });
-    
-    // Add labels
-    const label = g.append('g')
-      .selectAll('text')
-      .data(data.nodes)
-      .join('text')
-      .attr('class', 'node-label')
-      .text(d => d.id.length > 15 ? d.id.substring(0, 15) + '...' : d.id)
-      .style('font-size', d => Math.max(9, Math.sqrt(d.frequency) * 1.5 * nodeSizeMultiplier) + 'px');
-    
-    // Update positions on tick
-    simulation.on('tick', () => {
-      link
-        .attr('x1', d => d.source.x)
-        .attr('y1', d => d.source.y)
-        .attr('x2', d => d.target.x)
-        .attr('y2', d => d.target.y);
-      
-      node
-        .attr('cx', d => d.x)
-        .attr('cy', d => d.y);
-      
-      label
-        .attr('x', d => d.x)
-        .attr('y', d => d.y + 4);
-    });
-    
-    // Reset zoom function
-    window.resetNetworkZoom = function() {
-      svg.transition().duration(750).call(
-        zoom.transform,
-        d3.zoomIdentity.translate(0, 0).scale(1)
-      );
-    };
-    
-    function dragstarted(event) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      event.subject.fx = event.subject.x;
-      event.subject.fy = event.subject.y;
-    }
-    
-    function dragged(event) {
-      event.subject.fx = event.x;
-      event.subject.fy = event.y;
-    }
-    
-    function dragended(event) {
-      if (!event.active) simulation.alphaTarget(0);
-      event.subject.fx = null;
-      event.subject.fy = null;
-    }
-  }
-  
-  // Update legend based on network type
-  function updateLegend(data) {
-    const legend = document.getElementById('legend');
-    
-    if (data.networkType === 'bipartite') {
-      const type1 = data.nodes.find(n => n.nodeTypeIndex === 0)?.type || 'Type 1';
-      const type2 = data.nodes.find(n => n.nodeTypeIndex === 1)?.type || 'Type 2';
-      
-      legend.innerHTML = `
-        <div class="legend-item">
-          <div class="legend-circle" style="background: #1f77b4;"></div>
-          <span>${type1} nodes</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-circle" style="background: #ff7f0e;"></div>
-          <span>${type2} nodes</span>
-        </div>
-        <div class="legend-item">
-          <div style="width: 20px; height: 2px; background: var(--grey-mid);"></div>
-          <span>Connections (thickness = strength)</span>
-        </div>
-      `;
-    } else {
-      const nodeType = data.nodes[0]?.type || 'nodes';
-      legend.innerHTML = `
-        <div class="legend-item">
-          <div class="legend-circle" style="background: #1f77b4;"></div>
-          <span>${nodeType} (size = frequency)</span>
-        </div>
-        <div class="legend-item">
-          <div style="width: 20px; height: 2px; background: var(--grey-mid);"></div>
-          <span>Co-occurrence links (thickness = strength)</span>
-        </div>
-      `;
-    }
-  }
-  
-  // Generate analysis text
-  function generateAnalysis(data) {
-    const totalNodes = data.nodes.length;
-    const totalConnections = data.links.length;
-    
-    // Find most connected nodes
-    const topNodes = data.nodes
-      .sort((a, b) => b.connections - a.connections)
-      .slice(0, 5);
-    
-    // Find strongest connections
-    const strongestLinks = data.links
-      .sort((a, b) => b.weight - a.weight)
-      .slice(0, 5);
-    
-    const networkTypeText = data.networkType === 'bipartite' ? 
-      'bipartite network showing relationships between two different types of entities' :
-      'co-occurrence network showing how entities appear together';
-    
-    const analysisHTML = `
-      <h3>Network Overview</h3>
-      <p>This ${networkTypeText}. ${data.networkType === 'bipartite' ? 'Connections indicate shared novels between different entity types.' : 'Connections show entities that frequently appear together in the same novels.'}</p>
-      
-      <h3>Most Connected Nodes</h3>
-      <ol>
-        ${topNodes.map(node => 
-          `<li><strong>${node.id}</strong> (${node.type}) - ${node.connections} connections, ${node.frequency} novels</li>`
-        ).join('')}
-      </ol>
-      
-      <h3>Strongest Connections</h3>
-      <ol>
-        ${strongestLinks.map(link => 
-          `<li><strong>${link.source.id || link.source}</strong> ↔ <strong>${link.target.id || link.target}</strong> (${link.weight} shared novels)</li>`
-        ).join('')}
-      </ol>
-      
-      <h3>Insights</h3>
-      <p>The network reveals structural patterns in the artfiction corpus, showing which ${data.nodes[0]?.type || 'entities'} serve as central connectors and which form tight clusters. These patterns can indicate influential ${data.nodes[0]?.type || 'entities'}, recurring collaborative relationships, or thematic groupings.</p>
-    `;
-    
-    document.getElementById('analysis-content').innerHTML = analysisHTML;
-  }
-  
-  // Update stats
-  function updateStats(data) {
-    const totalNovels = novels.length;
-    const avgDegree = data.nodes.length > 0 ? (data.links.length * 2 / data.nodes.length).toFixed(1) : 0;
-    
-    const statsHTML = `
-      <div class="stat-card">
-        <div class="stat-value">${totalNovels}</div>
-        <div class="stat-label">Total Novels</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">${data.nodes.length}</div>
-        <div class="stat-label">Network Nodes</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">${data.links.length}</div>
-        <div class="stat-label">Connections</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">${avgDegree}</div>
-        <div class="stat-label">Avg Connections</div>
-      </div>
-    `;
-    
-    document.getElementById('stats').innerHTML = statsHTML;
-  }
-  
-  // Controls
-  const networkTypeSelect = document.getElementById('networkType');
-  const nodeType1Select = document.getElementById('nodeType1');
-  const nodeType2Select = document.getElementById('nodeType2');
-  const nodeType2Group = document.getElementById('nodeType2Group');
-  const minConnectionsSlider = document.getElementById('minConnections');
-  const minConnectionsValue = document.getElementById('minConnectionsValue');
-  const nodeSizeSlider = document.getElementById('nodeSize');
-  const nodeSizeValue = document.getElementById('nodeSizeValue');
-  const maxNodesSlider = document.getElementById('maxNodes');
-  const maxNodesValue = document.getElementById('maxNodesValue');
-  const updateButton = document.getElementById('updateNetwork');
-  const resetButton = document.getElementById('resetZoom');
-  
-  // Update visibility of second node type
-  function updateNodeType2Visibility() {
-    const isBipartite = networkTypeSelect.value === 'bipartite';
-    nodeType2Group.style.display = isBipartite ? 'flex' : 'none';
-  }
-  
-  function updateVisualization() {
-    try {
-      // Show loading state
-      document.getElementById('analysis-content').innerHTML = '<p>Generating network...</p>';
-      
-      const networkType = networkTypeSelect.value;
-      const nodeType1 = nodeType1Select.value;
-      const nodeType2 = nodeType2Select.value;
-      const minConnections = parseInt(minConnectionsSlider.value);
-      const nodeSizeMultiplier = parseFloat(nodeSizeSlider.value);
-      const maxNodes = parseInt(maxNodesSlider.value);
-      
-      console.log('Building network:', { networkType, nodeType1, nodeType2, minConnections, maxNodes });
-      
-      let data;
-      if (networkType === 'bipartite') {
-        data = buildBipartiteNetwork(nodeType1, nodeType2, minConnections, maxNodes);
-      } else {
-        data = buildSingleNodeNetwork(nodeType1, minConnections, maxNodes);
-      }
-      
-      console.log('Network data:', data);
-      
-      if (!data.nodes || data.nodes.length === 0) {
-        document.getElementById('analysis-content').innerHTML = '<p style="color: #b00;">No nodes found with current settings. Try reducing minimum connections or increasing max nodes.</p>';
-        return;
-      }
-      
-      // Store data globally for resize handling
-      window.currentNetworkData = data;
-      
-      createNetwork(data, nodeSizeMultiplier);
-      updateStats(data);
-      updateLegend(data);
-      generateAnalysis(data);
-      
-    } catch (error) {
-      console.error('Error in updateVisualization:', error);
-      document.getElementById('analysis-content').innerHTML = `<p style="color: #b00;">Error: ${error.message}</p>`;
-    }
-  }
-  
-  // Event listeners
-  networkTypeSelect.addEventListener('change', updateNodeType2Visibility);
-  
-  minConnectionsSlider.addEventListener('input', () => {
-    minConnectionsValue.textContent = minConnectionsSlider.value;
-  });
-  
-  nodeSizeSlider.addEventListener('input', () => {
-    nodeSizeValue.textContent = parseFloat(nodeSizeSlider.value).toFixed(1);
-  });
-  
-  maxNodesSlider.addEventListener('input', () => {
-    maxNodesValue.textContent = maxNodesSlider.value;
-  });
-  
-  updateButton.addEventListener('click', updateVisualization);
-  
-  resetButton.addEventListener('click', () => {
-    if (window.resetNetworkZoom) {
-      window.resetNetworkZoom();
-    }
-  });
-  
-  // Initial setup
-  updateNodeType2Visibility();
-  
-  // Auto-generate initial network
-  try {
-    updateVisualization();
   } catch (error) {
-    console.error('Error generating initial network:', error);
-    document.getElementById('analysis-content').innerHTML = '<p style="color: #b00;">Error generating network. Check console for details.</p>';
+    debug('✗ Error building network:', error.message);
+    updateStatus(`Error building network: ${error.message}`);
+  }
+}
+
+function visualizeNetwork(data) {
+  const container = document.getElementById('network-container');
+  const svg = d3.select('#network-svg');
+  const tooltip = d3.select('#tooltip');
+  
+  svg.selectAll('*').remove();
+  
+  const width = container.offsetWidth;
+  const height = container.offsetHeight;
+  
+  debug(`Visualizing ${data.nodes.length} nodes in ${width}x${height} area`);
+  
+  // Create simulation
+  const simulation = d3.forceSimulation(data.nodes)
+    .force('link', d3.forceLink(data.links).id(d => d.id).distance(80))
+    .force('charge', d3.forceManyBody().strength(-300))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(d => Math.sqrt(d.frequency) * 5 + 10));
+  
+  // Add zoom
+  const zoom = d3.zoom()
+    .scaleExtent([0.1, 4])
+    .on('zoom', (event) => {
+      g.attr('transform', event.transform);
+    });
+  
+  svg.call(zoom);
+  
+  const g = svg.append('g');
+  
+  // Create links
+  const link = g.append('g')
+    .selectAll('line')
+    .data(data.links)
+    .join('line')
+    .attr('class', 'link')
+    .attr('stroke-width', d => Math.sqrt(d.weight) * 2);
+  
+  // Create nodes
+  const node = g.append('g')
+    .selectAll('circle')
+    .data(data.nodes)
+    .join('circle')
+    .attr('class', 'node')
+    .attr('r', d => Math.sqrt(d.frequency) * 5 + 5)
+    .attr('fill', '#1f77b4')
+    .call(d3.drag()
+      .on('start', dragstarted)
+      .on('drag', dragged)
+      .on('end', dragended))
+    .on('mouseover', function(event, d) {
+      tooltip
+        .style('opacity', 1)
+        .style('left', (event.pageX + 10) + 'px')
+        .style('top', (event.pageY - 10) + 'px')
+        .html(`
+          <strong>${d.id}</strong><br>
+          Appears in ${d.frequency} novels<br>
+          ${d.connections} connections
+        `);
+      
+      // Highlight connections
+      const connected = new Set([d.id]);
+      data.links.forEach(l => {
+        if (l.source.id === d.id) connected.add(l.target.id);
+        if (l.target.id === d.id) connected.add(l.source.id);
+      });
+      
+      node.style('opacity', n => connected.has(n.id) ? 1 : 0.3);
+      link.style('opacity', l => 
+        l.source.id === d.id || l.target.id === d.id ? 1 : 0.1
+      );
+    })
+    .on('mouseout', function() {
+      tooltip.style('opacity', 0);
+      node.style('opacity', 1);
+      link.style('opacity', 0.6);
+    });
+  
+  // Add labels
+  const label = g.append('g')
+    .selectAll('text')
+    .data(data.nodes)
+    .join('text')
+    .attr('class', 'node-label')
+    .text(d => d.id.length > 15 ? d.id.substring(0, 15) + '...' : d.id);
+  
+  // Update positions
+  simulation.on('tick', () => {
+    link
+      .attr('x1', d => d.source.x)
+      .attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x)
+      .attr('y2', d => d.target.y);
+    
+    node
+      .attr('cx', d => d.x)
+      .attr('cy', d => d.y);
+    
+    label
+      .attr('x', d => d.x)
+      .attr('y', d => d.y + 4);
+  });
+  
+  // Reset view function
+  window.resetNetworkView = function() {
+    svg.transition().duration(750).call(
+      zoom.transform,
+      d3.zoomIdentity
+    );
+  };
+  
+  function dragstarted(event) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    event.subject.fx = event.subject.x;
+    event.subject.fy = event.subject.y;
   }
   
-  // Handle window resize
-  window.addEventListener('resize', () => {
-    if (document.querySelector('#network-svg g')) {
-      setTimeout(() => {
-        const data = window.currentNetworkData;
-        if (data) {
-          createNetwork(data, parseFloat(nodeSizeSlider.value));
-        }
-      }, 100);
+  function dragged(event) {
+    event.subject.fx = event.x;
+    event.subject.fy = event.y;
+  }
+  
+  function dragended(event) {
+    if (!event.active) simulation.alphaTarget(0);
+    event.subject.fx = null;
+    event.subject.fy = null;
+  }
+}
+
+function updateStats(nodes, links) {
+  const totalNovels = window.appData.novels.length;
+  const avgConnections = nodes.length > 0 ? (links.length * 2 / nodes.length).toFixed(1) : 0;
+  
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-value">${totalNovels}</div>
+      <div class="stat-label">Total Novels</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${nodes.length}</div>
+      <div class="stat-label">Connected Themes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${links.length}</div>
+      <div class="stat-label">Theme Connections</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${avgConnections}</div>
+      <div class="stat-label">Avg Connections</div>
+    </div>
+  `;
+}
+
+function generateAnalysis(nodes, links) {
+  const topThemes = nodes
+    .sort((a, b) => b.connections - a.connections)
+    .slice(0, 5);
+  
+  const strongestLinks = links
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 5);
+  
+  document.getElementById('analysis-content').innerHTML = `
+    <h3>Most Connected Themes</h3>
+    <ol>
+      ${topThemes.map(theme => 
+        `<li><strong>${theme.id}</strong> - ${theme.connections} connections, ${theme.frequency} novels</li>`
+      ).join('')}
+    </ol>
+    
+    <h3>Strongest Theme Relationships</h3>
+    <ol>
+      ${strongestLinks.map(link => 
+        `<li><strong>${link.source.id || link.source}</strong> ↔ <strong>${link.target.id || link.target}</strong> (${link.weight} novels)</li>`
+      ).join('')}
+    </ol>
+    
+    <p>The network reveals how themes cluster together in the artfiction corpus. Central themes act as bridges between different thematic communities.</p>
+  `;
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  debug('✓ DOM loaded');
+  
+  document.getElementById('minConnections').addEventListener('input', function() {
+    document.getElementById('minConnectionsValue').textContent = this.value;
+  });
+  
+  document.getElementById('updateNetwork').addEventListener('click', function() {
+    if (window.appData) {
+      buildNetwork();
     }
   });
-})();
+  
+  document.getElementById('resetView').addEventListener('click', function() {
+    if (window.resetNetworkView) {
+      window.resetNetworkView();
+    }
+  });
+  
+  // Start the app
+  init();
+});
 </script>
 </body>
 </html>
