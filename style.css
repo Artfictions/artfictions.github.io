@@ -28,10 +28,10 @@ input[type=number]{-moz-appearance:textfield}
 button{padding:0.6rem 1.1rem;font-size:1rem;border:1px solid #000;background:#000;color:#fff;cursor:pointer;transition:filter .15s;border-radius:0}
 button:hover{filter:brightness(1.15)}
 
-/* ------- Theme buttons (square) ------- */
-.checkbox-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.4rem;margin-top:0.3rem}
+/* ------- Theme buttons (square, auto‑width) ------- */
+.checkbox-group{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.3rem}
 .checkbox-group input{display:none}
-.checkbox-group span{display:block;border:1px solid var(--grey-mid);border-radius:4px;padding:.4rem .6rem;font-size:.8rem;text-align:center;cursor:pointer;background:transparent;color:var(--grey-dark);transition:all .15s;user-select:none;white-space:normal;overflow-visible}}
+.checkbox-group span{display:inline-block;border:1px solid var(--grey-mid);border-radius:4px;padding:.35rem .7rem;font-size:.8rem;text-align:center;cursor:pointer;background:transparent;color:var(--grey-dark);transition:background .15s,border-color .15s;user-select:none;line-height:1.1}
 .checkbox-group input:checked+span{background:#000;color:#fff;border-color:#000}
 .checkbox-group span:hover{border-color:#000}
 
