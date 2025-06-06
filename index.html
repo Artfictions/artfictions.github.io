@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iberian & Latin‑American Art Fictions – Novel Explorer</title>
+  <title>Iberian & Latin American Artfiction</title>
   <style>
     body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;margin:2rem;background:#fdfdfd;color:#222}
     h1{font-size:1.9rem;margin-bottom:1rem}
     fieldset{border:1px solid #ccc;padding:1rem;margin-bottom:1rem;border-radius:6px}
     label{display:block;margin:0.4rem 0 0.2rem;font-weight:600}
     input,select{width:100%;padding:0.45rem;font-size:1rem;border:1px solid #888;border-radius:4px}
+    input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+    input[type=number]{-moz-appearance:textfield}
     button{padding:0.45rem 0.9rem;font-size:1rem;border:1px solid #888;border-radius:4px;background:#fafafa;cursor:pointer}
     button:hover{background:#f0f0f0}
     #results-count{margin-bottom:0.6rem;font-weight:600}
@@ -24,7 +26,7 @@
   </style>
 </head>
 <body>
-  <h1>Search Iberian & Latin‑American Art Fictions</h1>
+  <h1>Search Iberian & Latin American Artfiction</h1>
 
   <form id="searchForm">
     <fieldset>
@@ -49,7 +51,7 @@
     </fieldset>
     <fieldset>
       <label for="yearInput">Year of Publication</label>
-      <input type="number" id="yearInput" placeholder="e.g. 2021" min="1900" max="2100">
+      <input type="text" id="yearInput" placeholder="e.g. 2015 or 2010–2020">
     </fieldset>
     <fieldset style="grid-column:1/-1">
       <label>Theme(s)</label>
@@ -147,6 +149,16 @@
       return field.toString().toLowerCase().includes(query);
     }
 
+    function yearMatch(novelYear, query){
+      if(!query) return true;
+      const match = query.match(/^(\d{4})(?:\s*[–-]\s*(\d{4}))?$/);
+      if(!match) return false;
+      const y = parseInt(novelYear);
+      const start = parseInt(match[1]);
+      const end = match[2] ? parseInt(match[2]) : start;
+      return y >= start && y <= end;
+    }
+
     function themeMatch(themeArr, selectedThemes){
       if(selectedThemes.length === 0) return true;
       return selectedThemes.every(t => themeArr.includes(t));
@@ -169,7 +181,7 @@
         fieldMatch(novel.Country,             q.country)   &&
         fieldMatch(novel.Language,            q.language)  &&
         fieldMatch(novel.Publisher,           q.publisher) &&
-        (q.year ? String(novel['Year of Publication']) === q.year : true) &&
+        yearMatch(novel['Year of Publication'], q.year)    &&
         themeMatch(novel.__themes,            q.themes)
       );
     }
