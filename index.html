@@ -26,7 +26,7 @@
 
   <div id="error" role="alert" hidden></div>
   <div id="results-count"></div>
-  <a id="downloadLink" href="#" download="filtered_novels.json" style="font-size:.9rem;text-decoration:underline;color:#000;margin-bottom:.8rem;display:inline-block">⬇︎ Download filtered dataset (JSON)</a>
+  <a id="downloadLink" href="#" download="filtered_novels.csv" style="font-size:.9rem;text-decoration:underline;color:#000;margin-bottom:.8rem;display:inline-block">⬇︎ Download filtered dataset (CSV)</a>
 
   <div style="overflow-x:auto"><table id="resultsTable"><thead><tr><th>Title</th><th>Author</th><th>Country</th><th>Language</th><th>Publisher</th><th>Year</th><th>Themes</th></tr></thead><tbody></tbody></table></div>
 </main>
@@ -39,9 +39,23 @@
   const countEl=document.getElementById('results-count');
   const downloadLink=document.getElementById('downloadLink');
   let downloadUrl=null;
+  function toCSV(rows){
+    const headers=['Title','Author','Country','Language','Publisher','Year','Themes'];
+    const escape=str=>`"${String(str).replace(/"/g,'""')}"`;
+    const lines=rows.map(r=>[
+      r.Title,r.Author,r.Country,r.Language,r.Publisher,r['Year of Publication'],r.__themes.join('; ')
+    ].map(escape).join(','));
+    return [headers.join(','),...lines].join('
+');
+  }
   function updateDownload(data){
     if(downloadUrl) URL.revokeObjectURL(downloadUrl);
-    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const csv=toCSV(data);
+    const blob=new Blob([csv],{type:'text/csv'});
+    downloadUrl=URL.createObjectURL(blob);
+    downloadLink.href=downloadUrl;
+    downloadLink.download=`filtered_novels_${data.length}.csv`;
+  });
     downloadUrl=URL.createObjectURL(blob);
     downloadLink.href=downloadUrl;
     downloadLink.download=`filtered_novels_${data.length}.json`;
