@@ -34,6 +34,10 @@
       stroke-width: 4px;
     }
     
+    .node-type-0 { fill: #1f77b4; }
+    .node-type-1 { fill: #ff7f0e; }
+    .node-single { fill: #1f77b4; }
+    
     .link {
       stroke: #999;
       stroke-opacity: 0.6;
@@ -145,17 +149,55 @@
 <main>
   <a href="index.html" class="back-link">← Back to Catalogue</a>
   
-  <h1>Theme Network Analysis</h1>
+  <h1>Network Analysis</h1>
   
-  <p>This network shows how themes co-occur across novels in the artfiction corpus. Nodes represent themes, and connections show themes that appear together in the same novels.</p>
+  <p>Explore relationships within the artfiction corpus. Choose different node types to analyze themes, authors, countries, publishers, and their interconnections.</p>
   
   <div id="status">Loading...</div>
   
   <div class="controls">
     <div class="control-group">
+      <label for="networkType">Network type</label>
+      <select id="networkType">
+        <option value="single">Single type (co-occurrence)</option>
+        <option value="bipartite">Two types (relationships)</option>
+      </select>
+    </div>
+    
+    <div class="control-group">
+      <label for="nodeType1">Primary nodes</label>
+      <select id="nodeType1">
+        <option value="themes">Themes</option>
+        <option value="authors">Authors</option>
+        <option value="countries">Countries</option>
+        <option value="languages">Languages</option>
+        <option value="publishers">Publishers</option>
+        <option value="years">Years</option>
+      </select>
+    </div>
+    
+    <div class="control-group" id="nodeType2Group" style="display: none;">
+      <label for="nodeType2">Secondary nodes</label>
+      <select id="nodeType2">
+        <option value="themes">Themes</option>
+        <option value="authors">Authors</option>
+        <option value="countries">Countries</option>
+        <option value="languages">Languages</option>
+        <option value="publishers">Publishers</option>
+        <option value="years">Years</option>
+      </select>
+    </div>
+    
+    <div class="control-group">
       <label for="minConnections">Minimum connections</label>
       <input type="range" id="minConnections" min="1" max="10" value="2" step="1">
       <span id="minConnectionsValue">2</span>
+    </div>
+    
+    <div class="control-group">
+      <label for="maxNodes">Max nodes</label>
+      <input type="range" id="maxNodes" min="10" max="50" value="30" step="5">
+      <span id="maxNodesValue">30</span>
     </div>
     
     <button type="button" id="updateNetwork">Update Network</button>
@@ -221,50 +263,34 @@ async function init() {
     
     debug(`✓ Found ${novels.length} novels`);
     
-    updateStatus('Processing themes...');
+    updateStatus('Processing data...');
     
-    // Process themes
-    const themeFreq = new Map();
-    const themeCooccurrence = new Map();
-    
-    novels.forEach((novel, index) => {
+    // Process all novel data
+    novels.forEach(novel => {
+      // Process themes
       const themes = [];
-      
-      // Extract themes
       for (let i = 1; i <= 5; i++) {
         const theme = novel[`Theme ${i}`];
         if (theme && theme.trim() && theme.trim() !== '') {
           themes.push(theme.trim());
         }
       }
+      novel.__themes = themes;
       
-      if (themes.length === 0) return;
-      
-      // Count theme frequencies
-      themes.forEach(theme => {
-        themeFreq.set(theme, (themeFreq.get(theme) || 0) + 1);
-      });
-      
-      // Count co-occurrences
-      for (let i = 0; i < themes.length; i++) {
-        for (let j = i + 1; j < themes.length; j++) {
-          const pair = [themes[i], themes[j]].sort().join('|||');
-          themeCooccurrence.set(pair, (themeCooccurrence.get(pair) || 0) + 1);
-        }
-      }
+      // Process other fields
+      novel.__author = novel.Author ? novel.Author.trim() : 'Unknown';
+      novel.__country = novel.Country ? novel.Country.trim() : 'Unknown';
+      novel.__language = novel.Language ? novel.Language.trim() : 'Unknown';
+      novel.__publisher = novel.Publisher ? novel.Publisher.trim() : 'Unknown';
+      novel.__year = novel['Year of Publication'] ? String(novel['Year of Publication']).trim() : 'Unknown';
     });
     
-    debug(`✓ Found ${themeFreq.size} unique themes`);
-    debug(`✓ Found ${themeCooccurrence.size} theme pairs`);
+    debug('✓ Processed all novel fields');
     
     // Store data globally
-    window.appData = {
-      novels,
-      themeFreq,
-      themeCooccurrence
-    };
+    window.appData = { novels };
     
-    updateStatus('Building network...');
+    updateStatus('Building initial network...');
     buildNetwork();
     
   } catch (error) {
@@ -284,67 +310,258 @@ async function init() {
 
 function buildNetwork() {
   try {
+    const networkType = document.getElementById('networkType').value;
+    const nodeType1 = document.getElementById('nodeType1').value;
+    const nodeType2 = document.getElementById('nodeType2').value;
     const minConnections = parseInt(document.getElementById('minConnections').value);
-    const { themeFreq, themeCooccurrence } = window.appData;
+    const maxNodes = parseInt(document.getElementById('maxNodes').value);
     
-    debug(`Building network with min connections: ${minConnections}`);
+    debug(`Building ${networkType} network: ${nodeType1}${networkType === 'bipartite' ? ` <-> ${nodeType2}` : ''}`);
     
-    // Create nodes (top 30 themes by frequency)
-    const nodes = Array.from(themeFreq.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 30)
-      .map(([theme, freq]) => ({
-        id: theme,
-        frequency: freq,
-        connections: 0
-      }));
+    let data;
+    if (networkType === 'bipartite' && nodeType1 !== nodeType2) {
+      data = buildBipartiteNetwork(nodeType1, nodeType2, minConnections, maxNodes);
+    } else {
+      data = buildSingleTypeNetwork(nodeType1, minConnections, maxNodes);
+    }
     
-    const nodeIds = new Set(nodes.map(n => n.id));
+    debug(`Network built: ${data.nodes.length} nodes, ${data.links.length} links`);
     
-    // Create links
-    const links = Array.from(themeCooccurrence.entries())
-      .filter(([pair, weight]) => {
-        const [source, target] = pair.split('|||');
-        return weight >= minConnections && nodeIds.has(source) && nodeIds.has(target);
-      })
-      .map(([pair, weight]) => {
-        const [source, target] = pair.split('|||');
-        return { source, target, weight };
-      });
+    if (data.nodes.length === 0) {
+      updateStatus('No nodes found - try different settings');
+      return;
+    }
     
-    debug(`Created ${nodes.length} nodes and ${links.length} links`);
-    
-    if (links.length === 0) {
+    if (data.links.length === 0) {
       updateStatus('No connections found - try reducing minimum connections');
       return;
     }
     
-    // Count actual connections
-    const connectionCounts = new Map();
-    links.forEach(link => {
-      connectionCounts.set(link.source, (connectionCounts.get(link.source) || 0) + 1);
-      connectionCounts.set(link.target, (connectionCounts.get(link.target) || 0) + 1);
-    });
-    
-    nodes.forEach(node => {
-      node.connections = connectionCounts.get(node.id) || 0;
-    });
-    
-    // Filter nodes with connections
-    const connectedNodes = nodes.filter(n => n.connections > 0);
-    
-    debug(`${connectedNodes.length} nodes have connections`);
-    
     // Visualize
-    visualizeNetwork({ nodes: connectedNodes, links });
-    updateStats(connectedNodes, links);
-    generateAnalysis(connectedNodes, links);
+    visualizeNetwork(data);
+    updateStats(data.nodes, data.links);
+    generateAnalysis(data.nodes, data.links, networkType, nodeType1, nodeType2);
     
-    updateStatus('✓ Network ready');
+    updateStatus(`✓ ${networkType} network ready`);
     
   } catch (error) {
     debug('✗ Error building network:', error.message);
     updateStatus(`Error building network: ${error.message}`);
+  }
+}
+
+function buildSingleTypeNetwork(nodeType, minConnections, maxNodes) {
+  const { novels } = window.appData;
+  const itemFreq = new Map();
+  const itemCooccurrence = new Map();
+  
+  debug(`Building single-type network for: ${nodeType}`);
+  
+  if (nodeType === 'themes') {
+    // For themes, use within-novel co-occurrence
+    novels.forEach(novel => {
+      const themes = novel.__themes;
+      if (themes.length === 0) return;
+      
+      // Count frequencies
+      themes.forEach(theme => {
+        itemFreq.set(theme, (itemFreq.get(theme) || 0) + 1);
+      });
+      
+      // Count co-occurrences within novels
+      for (let i = 0; i < themes.length; i++) {
+        for (let j = i + 1; j < themes.length; j++) {
+          const pair = [themes[i], themes[j]].sort().join('|||');
+          itemCooccurrence.set(pair, (itemCooccurrence.get(pair) || 0) + 1);
+        }
+      }
+    });
+  } else {
+    // For other types, use shared-theme co-occurrence
+    novels.forEach(novel => {
+      const item = getNovelProperty(novel, nodeType);
+      if (item && item !== 'Unknown') {
+        itemFreq.set(item, (itemFreq.get(item) || 0) + 1);
+      }
+    });
+    
+    // Find items that share themes
+    const itemsByTheme = new Map();
+    novels.forEach(novel => {
+      const item = getNovelProperty(novel, nodeType);
+      if (item && item !== 'Unknown') {
+        novel.__themes.forEach(theme => {
+          if (!itemsByTheme.has(theme)) itemsByTheme.set(theme, new Set());
+          itemsByTheme.get(theme).add(item);
+        });
+      }
+    });
+    
+    // Count co-occurrences through shared themes
+    itemsByTheme.forEach(items => {
+      const itemArray = Array.from(items);
+      for (let i = 0; i < itemArray.length; i++) {
+        for (let j = i + 1; j < itemArray.length; j++) {
+          const pair = [itemArray[i], itemArray[j]].sort().join('|||');
+          itemCooccurrence.set(pair, (itemCooccurrence.get(pair) || 0) + 1);
+        }
+      }
+    });
+  }
+  
+  // Create nodes
+  const nodes = Array.from(itemFreq.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, maxNodes)
+    .map(([item, freq]) => ({
+      id: item,
+      frequency: freq,
+      type: nodeType,
+      nodeTypeIndex: 0,
+      connections: 0
+    }));
+  
+  const nodeIds = new Set(nodes.map(n => n.id));
+  
+  // Create links
+  const links = Array.from(itemCooccurrence.entries())
+    .filter(([pair, weight]) => {
+      const [source, target] = pair.split('|||');
+      return weight >= minConnections && nodeIds.has(source) && nodeIds.has(target);
+    })
+    .map(([pair, weight]) => {
+      const [source, target] = pair.split('|||');
+      return { source, target, weight };
+    });
+  
+  // Update connection counts
+  const connectionCounts = new Map();
+  links.forEach(link => {
+    connectionCounts.set(link.source, (connectionCounts.get(link.source) || 0) + 1);
+    connectionCounts.set(link.target, (connectionCounts.get(link.target) || 0) + 1);
+  });
+  
+  nodes.forEach(node => {
+    node.connections = connectionCounts.get(node.id) || 0;
+  });
+  
+  const connectedNodes = nodes.filter(n => n.connections > 0);
+  
+  return { 
+    nodes: connectedNodes, 
+    links, 
+    networkType: 'single',
+    nodeType1: nodeType 
+  };
+}
+
+function buildBipartiteNetwork(nodeType1, nodeType2, minConnections, maxNodes) {
+  const { novels } = window.appData;
+  const type1Freq = new Map();
+  const type2Freq = new Map();
+  const connections = new Map();
+  
+  debug(`Building bipartite network: ${nodeType1} <-> ${nodeType2}`);
+  
+  // Count frequencies and connections
+  novels.forEach(novel => {
+    const items1 = getNovelItems(novel, nodeType1);
+    const items2 = getNovelItems(novel, nodeType2);
+    
+    items1.forEach(item1 => {
+      type1Freq.set(item1, (type1Freq.get(item1) || 0) + 1);
+      items2.forEach(item2 => {
+        type2Freq.set(item2, (type2Freq.get(item2) || 0) + 1);
+        const key = `${item1}|||${item2}`;
+        connections.set(key, (connections.get(key) || 0) + 1);
+      });
+    });
+  });
+  
+  // Get top nodes for each type
+  const topType1 = Array.from(type1Freq.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, Math.floor(maxNodes / 2));
+  
+  const topType2 = Array.from(type2Freq.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, Math.floor(maxNodes / 2));
+  
+  const type1Ids = new Set(topType1.map(([id]) => id));
+  const type2Ids = new Set(topType2.map(([id]) => id));
+  
+  // Create nodes
+  const nodes = [
+    ...topType1.map(([id, freq]) => ({
+      id: id,
+      frequency: freq,
+      type: nodeType1,
+      nodeTypeIndex: 0,
+      connections: 0
+    })),
+    ...topType2.map(([id, freq]) => ({
+      id: id,
+      frequency: freq,
+      type: nodeType2,
+      nodeTypeIndex: 1,
+      connections: 0
+    }))
+  ];
+  
+  // Create links
+  const links = Array.from(connections.entries())
+    .filter(([key, weight]) => {
+      const [item1, item2] = key.split('|||');
+      return weight >= minConnections && type1Ids.has(item1) && type2Ids.has(item2);
+    })
+    .map(([key, weight]) => {
+      const [source, target] = key.split('|||');
+      return { source, target, weight };
+    });
+  
+  // Update connection counts
+  const connectionCounts = new Map();
+  links.forEach(link => {
+    connectionCounts.set(link.source, (connectionCounts.get(link.source) || 0) + 1);
+    connectionCounts.set(link.target, (connectionCounts.get(link.target) || 0) + 1);
+  });
+  
+  nodes.forEach(node => {
+    node.connections = connectionCounts.get(node.id) || 0;
+  });
+  
+  const connectedNodes = nodes.filter(n => n.connections > 0);
+  
+  return { 
+    nodes: connectedNodes, 
+    links, 
+    networkType: 'bipartite',
+    nodeType1,
+    nodeType2 
+  };
+}
+
+function getNovelProperty(novel, type) {
+  switch(type) {
+    case 'themes': return novel.__themes[0] || null;
+    case 'authors': return novel.__author;
+    case 'countries': return novel.__country;
+    case 'languages': return novel.__language;
+    case 'publishers': return novel.__publisher;
+    case 'years': return novel.__year;
+    default: return null;
+  }
+}
+
+function getNovelItems(novel, type) {
+  switch(type) {
+    case 'themes': return novel.__themes;
+    case 'authors': return [novel.__author].filter(x => x && x !== 'Unknown');
+    case 'countries': return [novel.__country].filter(x => x && x !== 'Unknown');
+    case 'languages': return [novel.__language].filter(x => x && x !== 'Unknown');
+    case 'publishers': return [novel.__publisher].filter(x => x && x !== 'Unknown');
+    case 'years': return [novel.__year].filter(x => x && x !== 'Unknown');
+    default: return [];
   }
 }
 
