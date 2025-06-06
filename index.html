@@ -3,24 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iberian &amp; Latin‑American Art Fictions – Novel Explorer</title>
+  <title>Iberian & Latin‑American Art Fictions – Novel Explorer</title>
   <style>
     body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;margin:2rem;background:#fdfdfd;color:#222}
-    h1{font-size:1.8rem;margin-bottom:1rem}
+    h1{font-size:1.9rem;margin-bottom:1rem}
     fieldset{border:1px solid #ccc;padding:1rem;margin-bottom:1rem;border-radius:6px}
     label{display:block;margin:0.4rem 0 0.2rem;font-weight:600}
-    input,select{width:100%;padding:0.4rem;font-size:1rem;border:1px solid #888;border-radius:4px}
-    button{padding:0.4rem 0.8rem;font-size:1rem;border:1px solid #888;border-radius:4px;background:#fafafa;cursor:pointer}
+    input,select{width:100%;padding:0.45rem;font-size:1rem;border:1px solid #888;border-radius:4px}
+    button{padding:0.45rem 0.9rem;font-size:1rem;border:1px solid #888;border-radius:4px;background:#fafafa;cursor:pointer}
     button:hover{background:#f0f0f0}
     #results-count{margin-bottom:0.6rem;font-weight:600}
     table{width:100%;border-collapse:collapse}
-    thead th{background:#eee;font-weight:700;padding:0.5rem;border-bottom:2px solid #bbb;text-align:left}
-    tbody td{padding:0.4rem;border-bottom:1px solid #ddd;vertical-align:top}
-    @media(min-width:700px){form{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem} fieldset{margin:0}}
+    thead th{background:#eee;font-weight:700;padding:0.55rem;border-bottom:2px solid #bbb;text-align:left}
+    tbody td{padding:0.45rem;border-bottom:1px solid #ddd;vertical-align:top}
+    #error{color:#b00;font-weight:600;margin:0.8rem 0}
+    .checkbox-group{max-height:160px;overflow-y:auto;padding:0.3rem;background:#f9f9f9;border:1px solid #ccc;border-radius:6px}
+    .checkbox-group label{display:block;font-weight:normal;margin-bottom:0.2rem}
+    @media(min-width:720px){form{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem} fieldset{margin:0}}
   </style>
 </head>
 <body>
-  <h1>Search Iberian &amp; Latin‑American Art Fictions</h1>
+  <h1>Search Iberian & Latin‑American Art Fictions</h1>
 
   <form id="searchForm">
     <fieldset>
@@ -48,14 +51,15 @@
       <input type="number" id="yearInput" placeholder="e.g. 2021" min="1900" max="2100">
     </fieldset>
     <fieldset>
-      <label for="themeInput">Theme</label>
-      <input type="text" id="themeInput" placeholder="e.g. Migration">
+      <label>Theme(s)</label>
+      <div id="themeCheckboxes" class="checkbox-group"></div>
     </fieldset>
-    <div style="grid-column:1/-1; text-align:right; margin-top:0.5rem">
+    <div style="grid-column:1/-1;text-align:right;margin-top:0.5rem">
       <button type="reset" id="clearBtn">Clear filters</button>
     </div>
   </form>
 
+  <div id="error" role="alert" hidden></div>
   <div id="results-count"></div>
   <div style="overflow-x:auto">
     <table id="resultsTable">
@@ -76,34 +80,52 @@
 
   <script>
   (async function(){
-    // Load the JSON dataset – make sure "artfictions_novels.json" sits alongside this file
-    const response = await fetch('artfictions_novels.json');
-    let json;
+    const DATA_URL = 'artfictions_novels.json';
+    const errEl   = document.getElementById('error');
+    const tbody   = document.querySelector('#resultsTable tbody');
+    const countEl = document.getElementById('results-count');
+
+    function showError(msg){
+      errEl.textContent = msg;
+      errEl.hidden = false;
+    }
+
+    let novels;
     try {
-      json = await response.json();
-    } catch(e) {
-      console.error('JSON parsing error:', e);
-      document.body.insertAdjacentHTML('beforeend','<p style="color:red">Failed to load dataset.</p>');
+      const response = await fetch(DATA_URL);
+      if(!response.ok){ throw new Error(`(${response.status}) ${response.statusText}`); }
+      novels = await response.json();
+    } catch (e) {
+      console.error(e);
+      showError('⚠️ Failed to load dataset – please check that '+DATA_URL+' is present and valid JSON.');
       return;
     }
 
-    const novels = Array.isArray(json) ? json : (Array.isArray(json.Novels) ? json.Novels : []);
+    if(!Array.isArray(novels)){
+      const keys = Object.keys(novels);
+      const firstArrayKey = keys.find(k => Array.isArray(novels[k]));
+      novels = firstArrayKey ? novels[firstArrayKey] : [];
+    }
 
-    // Flatten theme fields into an array for easier searching
     novels.forEach(novel => {
-      const themes = [];
-      for (let i = 1; i <= 5; i++) {
-        const key = `Theme ${i}`;
-        if (novel[key]) {
-          const t = novel[key].trim();
-          if (t) themes.push(t);
-        }
-      }
-      novel.__themes = themes; // private helper field
+      const themes=[];
+      for(let i=1;i<=5;i++){
+        const key=`Theme ${i}`;
+        if(novel[key]){const t=novel[key].trim();if(t)themes.push(t);} }
+      novel.__themes=themes;
     });
 
-    const tbody   = document.querySelector('#resultsTable tbody');
-    const countEl = document.getElementById('results-count');
+    const themeSet = new Set();
+    novels.forEach(n => n.__themes.forEach(t => themeSet.add(t)));
+    const allThemes = [...themeSet].sort();
+
+    const themeCheckboxes = document.getElementById('themeCheckboxes');
+    allThemes.forEach(theme => {
+      const id = 'theme-' + theme.replace(/[^a-z0-9]/gi, '_');
+      const label = document.createElement('label');
+      label.innerHTML = `<input type="checkbox" value="${theme}" name="themeBox"> ${theme}`;
+      themeCheckboxes.appendChild(label);
+    });
 
     const inputs = {
       title:     document.getElementById('titleInput'),
@@ -112,35 +134,32 @@
       language:  document.getElementById('languageInput'),
       publisher: document.getElementById('publisherInput'),
       year:      document.getElementById('yearInput'),
-      theme:     document.getElementById('themeInput')
     };
 
-    Object.values(inputs).forEach(inp => inp.addEventListener('input', filterAndRender));
-    document.getElementById('searchForm').addEventListener('reset', () => {
-      setTimeout(filterAndRender, 0); // wait for the form to actually reset
-    });
+    const themeBoxes = [...document.querySelectorAll('input[name="themeBox"]')];
+    [...Object.values(inputs), ...themeBoxes].forEach(inp => inp.addEventListener('input', filterAndRender));
+    document.getElementById('searchForm').addEventListener('reset', () => setTimeout(filterAndRender,0));
 
-    function fieldMatch(field, query) {
-      if (!query) return true;              // empty filter – match anything
-      if (!field) return false;             // no data – fail
+    function fieldMatch(field, query){
+      if(!query) return true;
+      if(!field) return false;
       return field.toString().toLowerCase().includes(query);
     }
 
-    function themeMatch(themeArr, query) {
-      if (!query) return true;
-      const q = query.toLowerCase();
-      return themeArr.some(t => t.toLowerCase().includes(q));
+    function themeMatch(themeArr, selectedThemes){
+      if(selectedThemes.length === 0) return true;
+      return selectedThemes.every(t => themeArr.includes(t));
     }
 
-    function filterData() {
-      const q = {
+    function filterData(){
+      const q={
         title:     inputs.title.value.trim().toLowerCase(),
         author:    inputs.author.value.trim().toLowerCase(),
         country:   inputs.country.value.trim().toLowerCase(),
         language:  inputs.language.value.trim().toLowerCase(),
         publisher: inputs.publisher.value.trim().toLowerCase(),
         year:      inputs.year.value.trim(),
-        theme:     inputs.theme.value.trim().toLowerCase()
+        themes:    themeBoxes.filter(box => box.checked).map(b => b.value)
       };
 
       return novels.filter(novel =>
@@ -150,33 +169,24 @@
         fieldMatch(novel.Language,            q.language)  &&
         fieldMatch(novel.Publisher,           q.publisher) &&
         (q.year ? String(novel['Year of Publication']) === q.year : true) &&
-        themeMatch(novel.__themes,            q.theme)
+        themeMatch(novel.__themes,            q.themes)
       );
     }
 
-    function render(results) {
-      tbody.innerHTML = '';
-      results.forEach(novel => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${novel.Title || ''}</td>
-          <td>${novel.Author || ''}</td>
-          <td>${novel.Country || ''}</td>
-          <td>${novel.Language || ''}</td>
-          <td>${novel.Publisher || ''}</td>
-          <td>${novel['Year of Publication'] || ''}</td>
-          <td>${novel.__themes.join(', ')}</td>`;
+    function render(results){
+      tbody.innerHTML='';
+      results.forEach(novel=>{
+        const row=document.createElement('tr');
+        row.innerHTML=`<td>${novel.Title||''}</td><td>${novel.Author||''}</td><td>${novel.Country||''}</td><td>${novel.Language||''}</td><td>${novel.Publisher||''}</td><td>${novel['Year of Publication']||''}</td><td>${novel.__themes.join(', ')}</td>`;
         tbody.appendChild(row);
       });
-      countEl.textContent = `Showing ${results.length} of ${novels.length} novels`;
+      countEl.textContent=`Showing ${results.length} of ${novels.length} novels`;
     }
 
-    function filterAndRender() {
-      const results = filterData();
-      render(results);
+    function filterAndRender(){
+      render(filterData());
     }
 
-    // Initial render
     filterAndRender();
   })();
   </script>
