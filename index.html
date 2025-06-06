@@ -14,52 +14,21 @@
   <h1>Iberian & Latin American Artfiction</h1>
 
   <form id="searchForm">
-    <fieldset>
-      <label class="field-title" for="titleInput">Title</label>
-      <input type="text" id="titleInput" placeholder="e.g. 33 Revoluciones">
-    </fieldset>
-    <fieldset>
-      <label class="field-title" for="authorInput">Author</label>
-      <input type="text" id="authorInput" placeholder="e.g. Canek Sánchez Guevara">
-    </fieldset>
-    <fieldset>
-      <label class="field-title" for="countryInput">Country</label>
-      <input type="text" id="countryInput" placeholder="e.g. Cuba">
-    </fieldset>
-    <fieldset>
-      <label class="field-title" for="languageInput">Language</label>
-      <input type="text" id="languageInput" placeholder="e.g. Spanish">
-    </fieldset>
-    <fieldset>
-      <label class="field-title" for="publisherInput">Publisher</label>
-      <input type="text" id="publisherInput" placeholder="e.g. Sudaquia">
-    </fieldset>
-    <fieldset>
-      <label class="field-title" for="yearInput">Year of Publication</label>
-      <input type="text" id="yearInput" placeholder="2015 or 2010–2020">
-    </fieldset>
-    <fieldset style="grid-column:1/-1">
-      <label class="field-title">Theme(s)</label>
-      <div id="themeCheckboxes" class="checkbox-group"></div>
-    </fieldset>
-    <div style="grid-column:1/-1;text-align:right">
-      <button type="reset" id="clearBtn">Clear filters</button>
-    </div>
+    <fieldset><label class="field-title" for="titleInput">Title</label><input id="titleInput" type="text" placeholder="e.g. 33 Revoluciones"></fieldset>
+    <fieldset><label class="field-title" for="authorInput">Author</label><input id="authorInput" type="text" placeholder="e.g. Canek Sánchez Guevara"></fieldset>
+    <fieldset><label class="field-title" for="countryInput">Country</label><input id="countryInput" type="text" placeholder="e.g. Cuba"></fieldset>
+    <fieldset><label class="field-title" for="languageInput">Language</label><input id="languageInput" type="text" placeholder="e.g. Spanish"></fieldset>
+    <fieldset><label class="field-title" for="publisherInput">Publisher</label><input id="publisherInput" type="text" placeholder="e.g. Sudaquia"></fieldset>
+    <fieldset><label class="field-title" for="yearInput">Year of Publication</label><input id="yearInput" type="text" placeholder="2015 or 2010–2020"></fieldset>
+    <fieldset style="grid-column:1/-1"><label class="field-title">Theme(s)</label><div id="themeCheckboxes" class="checkbox-group"></div></fieldset>
+    <div style="grid-column:1/-1;text-align:right"><button type="reset" id="clearBtn">Clear filters</button></div>
   </form>
 
   <div id="error" role="alert" hidden></div>
   <div id="results-count"></div>
-  <div style="overflow-x:auto">
-    <table id="resultsTable">
-      <thead>
-        <tr>
-          <th>Title</th><th>Author</th><th>Country</th><th>Language</th>
-          <th>Publisher</th><th>Year</th><th>Themes</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <a id="downloadLink" href="#" download="filtered_novels.json" style="font-size:.9rem;text-decoration:underline;color:#000;margin-bottom:.8rem;display:inline-block">⬇︎ Download filtered dataset (JSON)</a>
+
+  <div style="overflow-x:auto"><table id="resultsTable"><thead><tr><th>Title</th><th>Author</th><th>Country</th><th>Language</th><th>Publisher</th><th>Year</th><th>Themes</th></tr></thead><tbody></tbody></table></div>
 </main>
 
 <script>
@@ -68,58 +37,40 @@
   const errEl=document.getElementById('error');
   const tbody=document.querySelector('#resultsTable tbody');
   const countEl=document.getElementById('results-count');
+  const downloadLink=document.getElementById('downloadLink');
+  let downloadUrl=null;
+  function updateDownload(data){
+    if(downloadUrl) URL.revokeObjectURL(downloadUrl);
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    downloadUrl=URL.createObjectURL(blob);
+    downloadLink.href=downloadUrl;
+    downloadLink.download=`filtered_novels_${data.length}.json`;
+  }
   function showError(msg){errEl.textContent=msg;errEl.hidden=false;}
 
   let novels;
-  try{
-    const res=await fetch(DATA_URL);
-    if(!res.ok)throw new Error(res.status);
-    novels=await res.json();
-  }catch(e){console.error(e);showError('Dataset load failed');return;}
-
-  if(!Array.isArray(novels)){
-    const key=Object.keys(novels).find(k=>Array.isArray(novels[k]));
-    novels=key?novels[key]:[];
-  }
+  try{const res=await fetch(DATA_URL);if(!res.ok)throw new Error(res.status);novels=await res.json();}catch(e){console.error(e);showError('Dataset load failed');return;}
+  if(!Array.isArray(novels)){const key=Object.keys(novels).find(k=>Array.isArray(novels[k]));novels=key?novels[key]:[];}
   novels.forEach(n=>{const t=[];for(let i=1;i<=5;i++){const k=`Theme ${i}`;if(n[k])t.push(n[k].trim());}n.__themes=t;});
 
-  /* Build theme pills */
+  /* Build theme buttons */
   const themeSet=new Set();novels.forEach(n=>n.__themes.forEach(t=>themeSet.add(t)));
   const allThemes=[...themeSet].sort();
   const themeBox=document.getElementById('themeCheckboxes');
-  allThemes.forEach(theme=>{
-    const label=document.createElement('label');
-    label.innerHTML=`<input type=\"checkbox\" value=\"${theme}\" name=\"themeBox\"><span>${theme}</span>`;
-    themeBox.appendChild(label);
-  });
+  allThemes.forEach(theme=>{const label=document.createElement('label');label.innerHTML=`<input type="checkbox" value="${theme}" name="themeBox"><span>${theme}</span>`;themeBox.appendChild(label);});
 
-  const inputs={
-    title:document.getElementById('titleInput'),
-    author:document.getElementById('authorInput'),
-    country:document.getElementById('countryInput'),
-    language:document.getElementById('languageInput'),
-    publisher:document.getElementById('publisherInput'),
-    year:document.getElementById('yearInput'),
-  };
+  const inputs={title:document.getElementById('titleInput'),author:document.getElementById('authorInput'),country:document.getElementById('countryInput'),language:document.getElementById('languageInput'),publisher:document.getElementById('publisherInput'),year:document.getElementById('yearInput')};
   const themeInputs=[...document.querySelectorAll('input[name="themeBox"]')];
   [...Object.values(inputs),...themeInputs].forEach(el=>el.addEventListener('input',filterAndRender));
   document.getElementById('searchForm').addEventListener('reset',()=>setTimeout(filterAndRender,0));
 
-  function fMatch(val,q){return !q||val&&val.toLowerCase().includes(q);}  // substring match
-  function yMatch(y,q){if(!q)return true;const m=q.match(/^(\\d{4})(?:\\s*[\\u2013\\-]\\s*(\\d{4}))?$/);if(!m)return false;const start=parseInt(m[1]);const end=m[2]?parseInt(m[2]):start;const n=parseInt(y);return n>=start&&n<=end;}
+  function fMatch(v,q){return !q||v&&v.toLowerCase().includes(q);}  // substring match
+  function yMatch(y,q){if(!q)return true;const m=q.match(/^(\d{4})(?:\s*[\u2013\-]\s*(\d{4}))?$/);if(!m)return false;const s=parseInt(m[1]);const e=m[2]?parseInt(m[2]):s;const n=parseInt(y);return n>=s&&n<=e;}
   function tMatch(arr,sel){return sel.length===0||sel.every(t=>arr.includes(t));}
 
-  function filter(){const q={
-    title:inputs.title.value.trim().toLowerCase(),
-    author:inputs.author.value.trim().toLowerCase(),
-    country:inputs.country.value.trim().toLowerCase(),
-    language:inputs.language.value.trim().toLowerCase(),
-    publisher:inputs.publisher.value.trim().toLowerCase(),
-    year:inputs.year.value.trim(),
-    themes:themeInputs.filter(b=>b.checked).map(b=>b.value)
-  };return novels.filter(n=>fMatch(n.Title,q.title)&&fMatch(n.Author,q.author)&&fMatch(n.Country,q.country)&&fMatch(n.Language,q.language)&&fMatch(n.Publisher,q.publisher)&&yMatch(n['Year of Publication'],q.year)&&tMatch(n.__themes,q.themes));}
+  function filter(){const q={title:inputs.title.value.trim().toLowerCase(),author:inputs.author.value.trim().toLowerCase(),country:inputs.country.value.trim().toLowerCase(),language:inputs.language.value.trim().toLowerCase(),publisher:inputs.publisher.value.trim().toLowerCase(),year:inputs.year.value.trim(),themes:themeInputs.filter(b=>b.checked).map(b=>b.value)};return novels.filter(n=>fMatch(n.Title,q.title)&&fMatch(n.Author,q.author)&&fMatch(n.Country,q.country)&&fMatch(n.Language,q.language)&&fMatch(n.Publisher,q.publisher)&&yMatch(n['Year of Publication'],q.year)&&tMatch(n.__themes,q.themes));}
 
-  function render(rows){tbody.innerHTML='';rows.forEach(n=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${n.Title||''}</td><td>${n.Author||''}</td><td>${n.Country||''}</td><td>${n.Language||''}</td><td>${n.Publisher||''}</td><td>${n['Year of Publication']||''}</td><td>${n.__themes.join(', ')}</td>`;tbody.appendChild(tr);});countEl.textContent=`Showing ${rows.length} of ${novels.length}`;}
+  function render(rows){tbody.innerHTML='';rows.forEach(n=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${n.Title||''}</td><td>${n.Author||''}</td><td>${n.Country||''}</td><td>${n.Language||''}</td><td>${n.Publisher||''}</td><td>${n['Year of Publication']||''}</td><td>${n.__themes.join(', ')}</td>`;tbody.appendChild(tr);});countEl.textContent=`Showing ${rows.length} of ${novels.length}`;updateDownload(rows);}
   function filterAndRender(){render(filter());}
   filterAndRender();
 })();
