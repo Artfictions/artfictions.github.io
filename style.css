@@ -28,11 +28,11 @@ input[type=number]{-moz-appearance:textfield}
 button{padding:0.6rem 1.1rem;font-size:1rem;border:1px solid #000;background:#000;color:#fff;cursor:pointer;transition:filter .15s;border-radius:0}
 button:hover{filter:brightness(1.15)}
 
-/* ------- Theme list (bullets) ------- */
-.checkbox-group{column-count:3;column-gap:1.5rem;margin-top:0.4rem}
-.checkbox-group label{display:block;break-inside:avoid;margin-bottom:.35rem;font-size:.9rem;color:var(--grey-dark);cursor:pointer}
-.checkbox-group input{margin-right:.5rem}
-.checkbox-group span{display:inline;white-space:normal;padding:0;margin:0;border:none}
+/* ------- Theme list (compact bullets) ------- */
+.checkbox-group{column-count:3;column-gap:0.75rem;margin-top:0.2rem}
+.checkbox-group label{display:block;break-inside:avoid;margin-bottom:.15rem;font-size:.8rem;color:var(--grey-dark);cursor:pointer}
+.checkbox-group input{margin-right:.3rem}
+.checkbox-group span{display:inline}
 
 /* ------- Results table ------- */
 #results-count{margin:1.1rem 0 .8rem;font-weight:600}
