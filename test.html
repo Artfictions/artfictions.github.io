@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Page</title>
+</head>
+<body>
+  <h1>JavaScript Test</h1>
+  <div id="test-div">If you see this, JavaScript is NOT working</div>
+  
+  <script>
+    // Basic test
+    document.getElementById('test-div').innerHTML = '<h2 style="color: green;">JavaScript IS working!</h2>';
+    console.log('Test script running');
+    
+    // Test D3
+    const d3Script = document.createElement('script');
+    d3Script.src = 'https://d3js.org/d3.v7.min.js';
+    d3Script.onload = function() {
+      document.getElementById('test-div').innerHTML += '<p style="color: blue;">D3.js loaded successfully!</p>';
+      
+      // Try to create a simple visualization
+      const svg = d3.select('body')
+        .append('svg')
+        .attr('width', 200)
+        .attr('height', 200)
+        .style('background', 'lightgray');
+      
+      svg.append('circle')
+        .attr('cx', 100)
+        .attr('cy', 100)
+        .attr('r', 50)
+        .style('fill', 'red');
+        
+      document.getElementById('test-div').innerHTML += '<p style="color: purple;">D3 visualization created (red circle below)</p>';
+    };
+    d3Script.onerror = function() {
+      document.getElementById('test-div').innerHTML += '<p style="color: red;">Failed to load D3.js</p>';
+    };
+    document.head.appendChild(d3Script);
+    
+    // Test data loading
+    fetch('artfictions_novels.json')
+      .then(response => {
+        document.getElementById('test-div').innerHTML += '<p style="color: orange;">Data file found: ' + response.status + '</p>';
+        return response.json();
+      })
+      .then(data => {
+        document.getElementById('test-div').innerHTML += '<p style="color: green;">Data loaded successfully!</p>';
+      })
+      .catch(error => {
+        document.getElementById('test-div').innerHTML += '<p style="color: red;">Error loading data: ' + error + '</p>';
+      });
+  </script>
+</body>
+</html>
