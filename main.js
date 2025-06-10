@@ -41,24 +41,50 @@
     const key=Object.keys(novels).find(k=>Array.isArray(novels[k]));
     novels=key?novels[key]:[];
   }
-  novels.forEach(n=>{const t=[];for(let i=1;i<=5;i++){const k=`Theme ${i}`;if(n[k])t.push(n[k].trim());}n.__themes=t;});
+  
+  // Process all data
+  novels.forEach(n=>{
+    // Process themes
+    const t=[];
+    for(let i=1;i<=5;i++){
+      const k=`Theme ${i}`;
+      if(n[k] && String(n[k]).trim()) t.push(String(n[k]).trim());
+    }
+    n.__themes=t;
+    
+    // Ensure all fields are clean strings
+    n.Title = n.Title ? String(n.Title).trim() : '';
+    n.Author = n.Author ? String(n.Author).trim() : '';
+    n.Country = n.Country ? String(n.Country).trim() : '';
+    n.Language = n.Language ? String(n.Language).trim() : '';
+    n.Publisher = n.Publisher ? String(n.Publisher).trim() : '';
+    n['Year of Publication'] = n['Year of Publication'] ? String(n['Year of Publication']).trim() : '';
+  });
 
   /* Build autocomplete data */
   function buildAutocompleteData() {
     autocompleteData = {
-      title: [...new Set(novels.map(n => n.Title).filter(Boolean))].sort(),
-      author: [...new Set(novels.map(n => n.Author).filter(Boolean))].sort(),
-      country: [...new Set(novels.map(n => n.Country).filter(Boolean))].sort(),
-      language: [...new Set(novels.map(n => n.Language).filter(Boolean))].sort(),
-      publisher: [...new Set(novels.map(n => n.Publisher).filter(Boolean))].sort(),
-      year: [...new Set(novels.map(n => n['Year of Publication']).filter(Boolean))].sort((a,b) => b-a)
+      title: [...new Set(novels.map(n => n.Title).filter(v => v && v !== ''))].sort(),
+      author: [...new Set(novels.map(n => n.Author).filter(v => v && v !== ''))].sort(),
+      country: [...new Set(novels.map(n => n.Country).filter(v => v && v !== ''))].sort(),
+      language: [...new Set(novels.map(n => n.Language).filter(v => v && v !== ''))].sort(),
+      publisher: [...new Set(novels.map(n => n.Publisher).filter(v => v && v !== ''))].sort(),
+      year: [...new Set(novels.map(n => n['Year of Publication']).filter(v => v && v !== ''))].sort((a,b) => b.localeCompare(a, undefined, {numeric: true}))
     };
+    
+    console.log('Autocomplete data built:', Object.keys(autocompleteData).map(k => `${k}: ${autocompleteData[k].length}`));
   }
 
   /* Dropdown autocomplete functionality */
   function setupAutocomplete(inputId, dropdownId, dataKey) {
     const input = document.getElementById(inputId);
     const dropdown = document.getElementById(dropdownId);
+    
+    if (!input || !dropdown) {
+      console.error(`Autocomplete setup failed for ${inputId}/${dropdownId}`);
+      return;
+    }
+    
     let highlightedIndex = -1;
     let filteredOptions = [];
     
@@ -113,7 +139,7 @@
     
     input.addEventListener('input', () => {
       const value = input.value.trim();
-      const data = autocompleteData[dataKey];
+      const data = autocompleteData[dataKey] || [];
       
       if (value.length === 0) {
         hideDropdown();
@@ -231,7 +257,16 @@
   }
 
   function updateSortIndicators() {
-    // No visual indicators needed - sorting is indicated by cursor and hover states
+    document.querySelectorAll('.sort-indicator').forEach(indicator => {
+      indicator.className = 'sort-indicator';
+    });
+    
+    if (currentSort.column) {
+      const header = document.querySelector(`th[data-sort="${currentSort.column}"] .sort-indicator`);
+      if (header) {
+        header.className = `sort-indicator ${currentSort.direction}`;
+      }
+    }
   }
 
   /* Table header click handlers */
@@ -246,6 +281,7 @@
         currentSort.direction = 'asc';
       }
       
+      updateSortIndicators();
       render(filteredResults);
     });
   });
