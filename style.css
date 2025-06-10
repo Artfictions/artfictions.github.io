@@ -48,13 +48,40 @@ table{width:100%;border-collapse:collapse}
 thead th{position:sticky;top:0;background:var(--grey-light);font-weight:700;padding:0.7rem;border-bottom:2px solid var(--grey-mid);text-align:left;user-select:none;transition:background-color 0.15s}
 thead th[data-sort]{cursor:pointer}
 thead th[data-sort]:hover{background:var(--grey-mid)}
-.sort-indicator{margin-left:0.2rem;font-size:0.7rem;opacity:0;transition:opacity 0.15s}
-.sort-indicator.asc{opacity:1}
-.sort-indicator.asc:after{content:'↑'}
-.sort-indicator.desc{opacity:1}
-.sort-indicator.desc:after{content:'↓'}
+
+.sort-indicator {
+  margin-left: 0.4rem;
+  font-size: 0.8rem;
+  opacity: 0.3; /* Always visible but subtle */
+  transition: opacity 0.15s;
+  display: inline-block;
+}
+
+.sort-indicator:after {
+  content: '↕'; /* Double arrow for unsorted columns */
+}
+
+.sort-indicator.asc {
+  opacity: 1;
+}
+.sort-indicator.asc:after {
+  content: '↑';
+}
+
 tbody td{padding:0.65rem;border-bottom:1px solid var(--grey-light);vertical-align:top;font-size:.95rem}
 tbody tr:hover{background:var(--grey-light)}
+
+/* Column width adjustments */
+thead th:nth-child(7), /* Themes header */
+tbody td:nth-child(7) { /* Themes cells */
+  max-width: 200px;
+  word-wrap: break-word;
+}
+
+thead th:nth-child(6) { /* Year header - give it more breathing room */
+  white-space: nowrap;
+  padding-right: 2rem;
+}
 
 /* ------- Error ------- */
 #error{color:#b00;font-weight:600;margin:0.8rem 0}
