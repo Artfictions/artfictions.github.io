@@ -13,12 +13,12 @@
   <h1>Iberian & Latin American Artfiction</h1>
 
   <form id="searchForm">
-    <fieldset><label class="field-title" for="titleInput">Title</label><input id="titleInput" type="text" placeholder="e.g. 33 Revoluciones"></fieldset>
-    <fieldset><label class="field-title" for="authorInput">Author</label><input id="authorInput" type="text" placeholder="e.g. Canek Sánchez Guevara"></fieldset>
-    <fieldset><label class="field-title" for="countryInput">Country</label><input id="countryInput" type="text" placeholder="e.g. Cuba"></fieldset>
-    <fieldset><label class="field-title" for="languageInput">Language</label><input id="languageInput" type="text" placeholder="e.g. Spanish"></fieldset>
-    <fieldset><label class="field-title" for="publisherInput">Publisher</label><input id="publisherInput" type="text" placeholder="e.g. Sudaquia"></fieldset>
-    <fieldset><label class="field-title" for="yearInput">Year of Publication</label><input id="yearInput" type="text" placeholder="2015 or 2010–2020"></fieldset>
+    <fieldset><label class="field-title" for="titleInput">Title</label><input id="titleInput" type="text" placeholder="e.g. 33 Revoluciones" list="titleList"><datalist id="titleList"></datalist></fieldset>
+    <fieldset><label class="field-title" for="authorInput">Author</label><input id="authorInput" type="text" placeholder="e.g. Canek Sánchez Guevara" list="authorList"><datalist id="authorList"></datalist></fieldset>
+    <fieldset><label class="field-title" for="countryInput">Country</label><input id="countryInput" type="text" placeholder="e.g. Cuba" list="countryList"><datalist id="countryList"></datalist></fieldset>
+    <fieldset><label class="field-title" for="languageInput">Language</label><input id="languageInput" type="text" placeholder="e.g. Spanish" list="languageList"><datalist id="languageList"></datalist></fieldset>
+    <fieldset><label class="field-title" for="publisherInput">Publisher</label><input id="publisherInput" type="text" placeholder="e.g. Sudaquia" list="publisherList"><datalist id="publisherList"></datalist></fieldset>
+    <fieldset><label class="field-title" for="yearInput">Year of Publication</label><input id="yearInput" type="text" placeholder="2015 or 2010–2020" list="yearList"><datalist id="yearList"></datalist></fieldset>
     <fieldset style="grid-column:1/-1"><label class="field-title">Theme(s)</label><div id="themeCheckboxes" class="checkbox-group"></div></fieldset>
 
     <!-- Clear filters row -->
@@ -34,7 +34,7 @@
   <div id="results-count"></div>
   <a id="downloadLink" href="#" download="filtered_novels.csv" style="font-size:.9rem;text-decoration:underline;color:#000;margin-bottom:.8rem;display:inline-block">⬇︎ Download filtered dataset (CSV)</a>
 
-  <div style="overflow-x:auto"><table id="resultsTable"><thead><tr><th>Title</th><th>Author</th><th>Country</th><th>Language</th><th>Publisher</th><th>Year</th><th>Themes</th></tr></thead><tbody></tbody></table></div>
+  <div style="overflow-x:auto"><table id="resultsTable"><thead><tr><th data-sort="Title">Title <span class="sort-indicator"></span></th><th data-sort="Author">Author <span class="sort-indicator"></span></th><th data-sort="Country">Country <span class="sort-indicator"></span></th><th data-sort="Language">Language <span class="sort-indicator"></span></th><th data-sort="Publisher">Publisher <span class="sort-indicator"></span></th><th data-sort="Year of Publication">Year <span class="sort-indicator"></span></th><th>Themes</th></tr></thead><tbody></tbody></table></div>
 </main>
 <script src="main.js"></script>
 </body>
