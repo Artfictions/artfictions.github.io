@@ -47,8 +47,8 @@ button:hover{filter:brightness(1.15)}
 table{width:100%;border-collapse:collapse}
 thead th{position:sticky;top:0;background:var(--grey-light);font-weight:700;padding:0.7rem;border-bottom:2px solid var(--grey-mid);text-align:left;cursor:pointer;user-select:none;transition:background-color 0.15s}
 thead th:hover{background:var(--grey-mid)}
-thead th[data-sort]{position:relative;display:flex;align-items:flex-start;gap:0.3rem}
-.sort-indicator{opacity:0.4;font-size:0.7rem;line-height:1;margin-top:0.1rem}
+thead th[data-sort]{position:relative}
+.sort-indicator{margin-left:0.3rem;opacity:0.4;font-size:0.7rem;position:relative;top:-0.2em}
 .sort-indicator:after{content:'↕'}
 .sort-indicator.asc{opacity:1}
 .sort-indicator.asc:after{content:'↑'}
