@@ -9,6 +9,7 @@
   let downloadUrl=null;
   let currentSort = { column: null, direction: 'asc' };
   let filteredResults = [];
+  let autocompleteData = {};
 
   function toCSV(rows){
     const headers=['Title','Author','Country','Language','Publisher','Year','Themes'];
@@ -42,31 +43,58 @@
   }
   novels.forEach(n=>{const t=[];for(let i=1;i<=5;i++){const k=`Theme ${i}`;if(n[k])t.push(n[k].trim());}n.__themes=t;});
 
-  /* Build autocomplete lists */
-  function populateAutocomplete() {
-    const titles = [...new Set(novels.map(n => n.Title).filter(Boolean))].sort();
-    const authors = [...new Set(novels.map(n => n.Author).filter(Boolean))].sort();
-    const countries = [...new Set(novels.map(n => n.Country).filter(Boolean))].sort();
-    const languages = [...new Set(novels.map(n => n.Language).filter(Boolean))].sort();
-    const publishers = [...new Set(novels.map(n => n.Publisher).filter(Boolean))].sort();
-    const years = [...new Set(novels.map(n => n['Year of Publication']).filter(Boolean))].sort((a,b) => b-a);
+  /* Build autocomplete data */
+  function buildAutocompleteData() {
+    autocompleteData = {
+      title: [...new Set(novels.map(n => n.Title).filter(Boolean))].sort(),
+      author: [...new Set(novels.map(n => n.Author).filter(Boolean))].sort(),
+      country: [...new Set(novels.map(n => n.Country).filter(Boolean))].sort(),
+      language: [...new Set(novels.map(n => n.Language).filter(Boolean))].sort(),
+      publisher: [...new Set(novels.map(n => n.Publisher).filter(Boolean))].sort(),
+      year: [...new Set(novels.map(n => n['Year of Publication']).filter(Boolean))].sort((a,b) => b-a)
+    };
+  }
 
-    function populateDatalist(id, items) {
-      const datalist = document.getElementById(id);
-      datalist.innerHTML = '';
-      items.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item;
-        datalist.appendChild(option);
-      });
+  /* Inline autocomplete functionality */
+  function setupAutocomplete(inputId, suggestionId, dataKey) {
+    const input = document.getElementById(inputId);
+    const suggestion = document.getElementById(suggestionId);
+    
+    function updateSuggestion() {
+      const value = input.value;
+      const data = autocompleteData[dataKey];
+      
+      if (!value) {
+        suggestion.textContent = '';
+        return;
+      }
+      
+      const match = data.find(item => 
+        item.toLowerCase().startsWith(value.toLowerCase())
+      );
+      
+      if (match && match.toLowerCase() !== value.toLowerCase()) {
+        suggestion.textContent = match;
+      } else {
+        suggestion.textContent = '';
+      }
     }
-
-    populateDatalist('titleList', titles);
-    populateDatalist('authorList', authors);
-    populateDatalist('countryList', countries);
-    populateDatalist('languageList', languages);
-    populateDatalist('publisherList', publishers);
-    populateDatalist('yearList', years);
+    
+    function acceptSuggestion() {
+      if (suggestion.textContent) {
+        input.value = suggestion.textContent;
+        suggestion.textContent = '';
+        filterAndRender();
+      }
+    }
+    
+    input.addEventListener('input', updateSuggestion);
+    input.addEventListener('keydown', (e) => {
+      if ((e.key === 'Tab' || e.key === 'ArrowRight' || e.key === 'End') && suggestion.textContent) {
+        e.preventDefault();
+        acceptSuggestion();
+      }
+    });
   }
 
   /* Build theme checkbox list */
@@ -77,8 +105,14 @@
     themeBox.appendChild(label);
   });
 
-  /* Populate autocomplete after data is loaded */
-  populateAutocomplete();
+  /* Setup autocomplete after data is loaded */
+  buildAutocompleteData();
+  setupAutocomplete('titleInput', 'titleSuggestion', 'title');
+  setupAutocomplete('authorInput', 'authorSuggestion', 'author');
+  setupAutocomplete('countryInput', 'countrySuggestion', 'country');
+  setupAutocomplete('languageInput', 'languageSuggestion', 'language');
+  setupAutocomplete('publisherInput', 'publisherSuggestion', 'publisher');
+  setupAutocomplete('yearInput', 'yearSuggestion', 'year');
 
   /* Inputs */
   const inputs={
@@ -91,7 +125,13 @@
   };
   const themeInputs=[...document.querySelectorAll('input[name="themeBox"]')];
   [...Object.values(inputs),...themeInputs].forEach(el=>el.addEventListener('input',filterAndRender));
-  document.getElementById('searchForm').addEventListener('reset',()=>setTimeout(filterAndRender,0));
+  document.getElementById('searchForm').addEventListener('reset',()=>{
+    setTimeout(() => {
+      // Clear all suggestions after reset
+      document.querySelectorAll('.autocomplete-suggestion').forEach(el => el.textContent = '');
+      filterAndRender();
+    }, 0);
+  });
 
   /* Sorting functions */
   function sortRows(rows, column, direction) {

@@ -13,12 +13,12 @@
   <h1>Iberian & Latin American Artfiction</h1>
 
   <form id="searchForm">
-    <fieldset><label class="field-title" for="titleInput">Title</label><input id="titleInput" type="text" placeholder="e.g. 33 Revoluciones" list="titleList"><datalist id="titleList"></datalist></fieldset>
-    <fieldset><label class="field-title" for="authorInput">Author</label><input id="authorInput" type="text" placeholder="e.g. Canek Sánchez Guevara" list="authorList"><datalist id="authorList"></datalist></fieldset>
-    <fieldset><label class="field-title" for="countryInput">Country</label><input id="countryInput" type="text" placeholder="e.g. Cuba" list="countryList"><datalist id="countryList"></datalist></fieldset>
-    <fieldset><label class="field-title" for="languageInput">Language</label><input id="languageInput" type="text" placeholder="e.g. Spanish" list="languageList"><datalist id="languageList"></datalist></fieldset>
-    <fieldset><label class="field-title" for="publisherInput">Publisher</label><input id="publisherInput" type="text" placeholder="e.g. Sudaquia" list="publisherList"><datalist id="publisherList"></datalist></fieldset>
-    <fieldset><label class="field-title" for="yearInput">Year of Publication</label><input id="yearInput" type="text" placeholder="2015 or 2010–2020" list="yearList"><datalist id="yearList"></datalist></fieldset>
+    <fieldset><label class="field-title" for="titleInput">Title</label><div class="autocomplete-container"><input id="titleInput" type="text" placeholder="e.g. 33 Revoluciones" autocomplete="off"><span class="autocomplete-suggestion" id="titleSuggestion"></span></div></fieldset>
+    <fieldset><label class="field-title" for="authorInput">Author</label><div class="autocomplete-container"><input id="authorInput" type="text" placeholder="e.g. Canek Sánchez Guevara" autocomplete="off"><span class="autocomplete-suggestion" id="authorSuggestion"></span></div></fieldset>
+    <fieldset><label class="field-title" for="countryInput">Country</label><div class="autocomplete-container"><input id="countryInput" type="text" placeholder="e.g. Cuba" autocomplete="off"><span class="autocomplete-suggestion" id="countrySuggestion"></span></div></fieldset>
+    <fieldset><label class="field-title" for="languageInput">Language</label><div class="autocomplete-container"><input id="languageInput" type="text" placeholder="e.g. Spanish" autocomplete="off"><span class="autocomplete-suggestion" id="languageSuggestion"></span></div></fieldset>
+    <fieldset><label class="field-title" for="publisherInput">Publisher</label><div class="autocomplete-container"><input id="publisherInput" type="text" placeholder="e.g. Sudaquia" autocomplete="off"><span class="autocomplete-suggestion" id="publisherSuggestion"></span></div></fieldset>
+    <fieldset><label class="field-title" for="yearInput">Year of Publication</label><div class="autocomplete-container"><input id="yearInput" type="text" placeholder="2015 or 2010–2020" autocomplete="off"><span class="autocomplete-suggestion" id="yearSuggestion"></span></div></fieldset>
     <fieldset style="grid-column:1/-1"><label class="field-title">Theme(s)</label><div id="themeCheckboxes" class="checkbox-group"></div></fieldset>
 
     <!-- Clear filters row -->
