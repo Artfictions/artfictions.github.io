@@ -8,139 +8,320 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <style>
-    .chart-container { margin: 2rem 0; }
-    .chart-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; }
-    #dashboard .stat-card { text-align: center; }
-    svg { width: 100%; height: 400px; }
+    .explorer-container {
+      margin: 2rem 0;
+    }
+    
+    .viz-section {
+      margin: 3rem 0;
+      padding: 2rem;
+      background: var(--grey-light);
+      border-radius: 8px;
+    }
+    
+    .viz-section h2 {
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+      color: var(--fg);
+    }
+    
+    .viz-section h3 {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+      color: var(--grey-dark);
+    }
+    
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin: 2rem 0;
+    }
+    
+    .chart-container {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      min-height: 300px;
+      position: relative;
+    }
+    
+    .chart-title {
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .control-group label {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    
+    select.viz-control {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+      border: 1px solid var(--grey-mid);
+      border-radius: 4px;
+      background: white;
+    }
+    
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1rem;
+      color: var(--fg);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    
+    /* Chart-specific styles */
+    .arc path {
+      stroke: white;
+      stroke-width: 2px;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+    
+    .arc:hover path {
+      opacity: 0.8;
+    }
+    
+    .tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1000;
+    }
+    
+    .legend {
+      font-size: 12px;
+    }
+    
+    .legend-item {
+      cursor: pointer;
+    }
+    
+    .axis {
+      font-size: 11px;
+    }
+    
+    .axis-label {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    /* Sankey styles */
+    .sankey-link {
+      fill: none;
+      stroke-opacity: 0.5;
+    }
+    
+    .sankey-link:hover {
+      stroke-opacity: 0.8;
+    }
+    
+    .sankey-node rect {
+      cursor: pointer;
+      fill-opacity: 0.9;
+    }
+    
+    .sankey-node text {
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    /* Parallel coordinates styles */
+    .parallel-line {
+      fill: none;
+      stroke-opacity: 0.4;
+      stroke-width: 1.5;
+    }
+    
+    .parallel-line:hover {
+      stroke-opacity: 0.8;
+      stroke-width: 3;
+    }
+    
+    /* Chord diagram styles */
+    .chord {
+      fill-opacity: 0.7;
+      stroke-width: 0.5px;
+    }
+    
+    .chord:hover {
+      fill-opacity: 0.9;
+    }
+    
+    /* Loading spinner */
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--grey-dark);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .controls {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
 <main>
   <a href="index.html" class="back-link">← Back to Catalogue</a>
+  
   <h1>Data Explorer</h1>
-
-  <!-- Controls -->
-  <div class="controls">
-    <div class="control-group">
-      <label for="dimSelect">Dimension</label>
-      <select id="dimSelect">
-        <option value="themes">Themes</option>
-        <option value="countries">Countries</option>
-        <option value="languages">Languages</option>
-        <option value="years">Years (Decades)</option>
-      </select>
+  
+  <div class="explorer-container">
+    <!-- 1. Statistical Dashboards -->
+    <div class="viz-section" id="statistical-section">
+      <h2>1. Statistical Overview</h2>
+      <div class="charts-grid" id="stat-charts">
+        <div class="chart-container">
+          <div class="chart-title">Countries</div>
+          <div id="country-chart"></div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-title">Languages</div>
+          <div id="language-chart"></div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-title">Publishers (Top 20)</div>
+          <div id="publisher-chart"></div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-title">Themes</div>
+          <div id="theme-chart"></div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-title">Publication Years</div>
+          <div id="year-chart"></div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-title">Authors (Top 20)</div>
+          <div id="author-chart"></div>
+        </div>
+      </div>
     </div>
-    <div class="control-group">
-      <label for="filterSelect">Filter by</label>
-      <select id="filterSelect">
-        <option value="none">None</option>
-        <option value="country">Country</option>
-        <option value="language">Language</option>
-      </select>
+    
+    <!-- 2. Temporal Visualizations -->
+    <div class="viz-section" id="temporal-section">
+      <h2>2. Temporal Trends</h2>
+      <div class="controls">
+        <div class="control-group">
+          <label for="temporal-view">View by:</label>
+          <select id="temporal-view" class="viz-control">
+            <option value="themes">Themes</option>
+            <option value="countries">Countries</option>
+            <option value="languages">Languages</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="temporal-smoothing">Smoothing:</label>
+          <select id="temporal-smoothing" class="viz-control">
+            <option value="1">None</option>
+            <option value="3">3 years</option>
+            <option value="5" selected>5 years</option>
+            <option value="10">10 years</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-container" style="height: 400px;">
+        <div id="temporal-chart"></div>
+      </div>
+    </div>
+    
+    <!-- 3. Sankey Diagrams -->
+    <div class="viz-section" id="sankey-section">
+      <h2>3. Flow Diagrams</h2>
+      <div class="controls">
+        <div class="control-group">
+          <label for="sankey-type">Show flow between:</label>
+          <select id="sankey-type" class="viz-control">
+            <option value="theme-country">Themes → Countries</option>
+            <option value="theme-author">Themes → Authors (Top 30)</option>
+            <option value="country-publisher">Countries → Publishers</option>
+            <option value="language-theme">Languages → Themes</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-container" style="height: 600px;">
+        <div id="sankey-chart"></div>
+      </div>
+    </div>
+    
+    <!-- 4. Parallel Coordinates -->
+    <div class="viz-section" id="parallel-section">
+      <h2>4. Multi-dimensional Patterns</h2>
+      <div class="controls">
+        <div class="control-group">
+          <label for="parallel-sample">Sample size:</label>
+          <select id="parallel-sample" class="viz-control">
+            <option value="50">50 novels</option>
+            <option value="100" selected>100 novels</option>
+            <option value="200">200 novels</option>
+            <option value="all">All novels</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-container" style="height: 500px;">
+        <div id="parallel-chart"></div>
+      </div>
+    </div>
+    
+    <!-- 5. Chord Diagrams -->
+    <div class="viz-section" id="chord-section">
+      <h2>5. Relationship Networks</h2>
+      <div class="controls">
+        <div class="control-group">
+          <label for="chord-type">Show relationships between:</label>
+          <select id="chord-type" class="viz-control">
+            <option value="country-publisher">Countries ↔ Publishers</option>
+            <option value="language-theme">Languages ↔ Themes</option>
+            <option value="country-language">Countries ↔ Languages</option>
+            <option value="theme-theme">Theme Co-occurrences</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-container" style="height: 600px;">
+        <div id="chord-chart"></div>
+      </div>
     </div>
   </div>
-
-  <!-- Statistical Dashboards -->
-  <section id="dashboard" class="chart-container">
-    <h2 class="chart-title">Breakdown by Selected Dimension</h2>
-    <div id="pieCharts" class="stats"></div>
-  </section>
-
-  <!-- Temporal Visualisations -->
-  <section id="temporal" class="chart-container">
-    <h2 class="chart-title">Moving Average Trends over Decades</h2>
-    <svg id="trendChart"></svg>
-  </section>
-
-  <!-- Geographic Visualisations -->
-  <section id="geographic" class="chart-container">
-    <h2 class="chart-title">Sankey Diagram: Theme ↔︎ Country/Author</h2>
-    <svg id="sankeyChart"></svg>
-  </section>
-
-  <!-- Cross-dimensional Views -->
-  <section id="crossDim" class="chart-container">
-    <h2 class="chart-title">Parallel Coordinates</h2>
-    <svg id="parallelChart"></svg>
-    <h2 class="chart-title">Chord Diagram: Relationships</h2>
-    <svg id="chordChart"></svg>
-  </section>
-
 </main>
 
-<!-- D3.js and Sankey plugin -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
-<script>
-// Load and preprocess data
-Promise.all([
-  d3.json('artfictions_novels.json')
-]).then(([data]) => {
-  // Extract themes and other fields
-  data = data.Novels || data;
-  data.forEach(d => {
-    d.themes = [];
-    for (let i = 1; i <= 5; i++) {
-      const key = 'Theme ' + i;
-      if (d[key] && d[key].trim()) d.themes.push(d[key].trim());
-    }
-    d.decade = +d['Year of Publication'] ? Math.floor(d['Year of Publication']/10)*10 : 'Unknown';
-  });
-
-  createPieCharts(data);
-  createTrendChart(data);
-  createSankeyDiagram(data);
-  createParallelCoordinates(data);
-  createChordDiagram(data);
-});
-
-function createPieCharts(data) {
-  const dim = document.getElementById('dimSelect').value;
-  const counts = d3.rollup(data, v => v.length, d => d[capitalize(dim)]);
-  const pie = d3.pie().value(d => d[1]);
-  const arcs = pie(Array.from(counts));
-  const width = 200, height = 200, radius = Math.min(width, height)/2;
-  const color = d3.scaleOrdinal(d3.schemeCategory10);
-
-  const container = d3.select('#pieCharts').html('');
-  arcs.forEach((arcData, i) => {
-    const svg = container.append('svg')
-      .attr('width', width)
-      .attr('height', height)
-      .append('g')
-        .attr('transform', `translate(${radius},${radius})`);
-    const arcGen = d3.arc().innerRadius(radius*0.5).outerRadius(radius);
-    svg.selectAll('path')
-      .data([arcData])
-      .join('path')
-      .attr('d', arcGen)
-      .attr('fill', () => color(i));
-    svg.append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '.35em')
-      .text(arcData.data[0]);
-  });
-}
-
-function createTrendChart(data) {
-  // TODO: compute moving averages of theme counts per decade and draw line chart
-}
-
-function createSankeyDiagram(data) {
-  // TODO: build sankey layout for theme-country or theme-author
-}
-
-function createParallelCoordinates(data) {
-  // TODO: draw parallel coordinates connecting country, language, decade, theme count
-}
-
-function createChordDiagram(data) {
-  // TODO: compute relationship matrix and draw chord diagram
-}
-
-function capitalize(s) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-</script>
+<script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+<script src="data-explorer.js"></script>
 </body>
 </html>
