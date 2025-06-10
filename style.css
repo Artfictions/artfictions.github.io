@@ -26,8 +26,10 @@ input[type=number]{-moz-appearance:textfield}
 
 /* ------- Autocomplete containers ------- */
 .autocomplete-container{position:relative;width:100%}
-.autocomplete-container input{position:relative;z-index:2;background:transparent}
-.autocomplete-suggestion{position:absolute;top:0.55rem;left:0;color:var(--grey-mid);font-size:1rem;pointer-events:none;z-index:1;white-space:nowrap;overflow:hidden}
+.autocomplete-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--bg);border:1px solid var(--grey-mid);border-top:none;max-height:200px;overflow-y:auto;z-index:10;display:none}
+.autocomplete-option{padding:0.5rem;cursor:pointer;border-bottom:1px solid var(--grey-light);font-size:0.9rem}
+.autocomplete-option:hover,.autocomplete-option.highlighted{background:var(--grey-light)}
+.autocomplete-option:last-child{border-bottom:none}
 
 /* ------- Button ------- */
 button{padding:0.6rem 1.1rem;font-size:1rem;border:1px solid #000;background:#000;color:#fff;cursor:pointer;transition:filter .15s;border-radius:0}
@@ -46,7 +48,7 @@ table{width:100%;border-collapse:collapse}
 thead th{position:sticky;top:0;background:var(--grey-light);font-weight:700;padding:0.7rem;border-bottom:2px solid var(--grey-mid);text-align:left;cursor:pointer;user-select:none;transition:background-color 0.15s}
 thead th:hover{background:var(--grey-mid)}
 thead th[data-sort]{position:relative}
-.sort-indicator{margin-left:0.5rem;opacity:0.4;font-size:0.8rem}
+.sort-indicator{margin-left:0.3rem;opacity:0.4;font-size:0.8rem;vertical-align:super}
 .sort-indicator:after{content:'↕'}
 .sort-indicator.asc{opacity:1}
 .sort-indicator.asc:after{content:'↑'}

@@ -55,45 +55,120 @@
     };
   }
 
-  /* Inline autocomplete functionality */
-  function setupAutocomplete(inputId, suggestionId, dataKey) {
+  /* Dropdown autocomplete functionality */
+  function setupAutocomplete(inputId, dropdownId, dataKey) {
     const input = document.getElementById(inputId);
-    const suggestion = document.getElementById(suggestionId);
+    const dropdown = document.getElementById(dropdownId);
+    let highlightedIndex = -1;
+    let filteredOptions = [];
     
-    function updateSuggestion() {
-      const value = input.value;
-      const data = autocompleteData[dataKey];
+    function showDropdown(options) {
+      dropdown.innerHTML = '';
+      filteredOptions = options;
+      highlightedIndex = -1;
       
-      if (!value) {
-        suggestion.textContent = '';
+      if (options.length === 0) {
+        dropdown.style.display = 'none';
         return;
       }
       
-      const match = data.find(item => 
-        item.toLowerCase().startsWith(value.toLowerCase())
-      );
+      options.slice(0, 10).forEach((option, index) => {
+        const div = document.createElement('div');
+        div.className = 'autocomplete-option';
+        div.textContent = option;
+        div.addEventListener('click', () => {
+          input.value = option;
+          dropdown.style.display = 'none';
+          filterAndRender();
+        });
+        dropdown.appendChild(div);
+      });
       
-      if (match && match.toLowerCase() !== value.toLowerCase()) {
-        suggestion.textContent = match;
-      } else {
-        suggestion.textContent = '';
-      }
+      dropdown.style.display = 'block';
     }
     
-    function acceptSuggestion() {
-      if (suggestion.textContent) {
-        input.value = suggestion.textContent;
-        suggestion.textContent = '';
+    function hideDropdown() {
+      dropdown.style.display = 'none';
+      highlightedIndex = -1;
+    }
+    
+    function updateHighlight() {
+      const options = dropdown.querySelectorAll('.autocomplete-option');
+      options.forEach((option, index) => {
+        option.classList.toggle('highlighted', index === highlightedIndex);
+      });
+    }
+    
+    function selectHighlighted() {
+      const options = dropdown.querySelectorAll('.autocomplete-option');
+      if (highlightedIndex >= 0 && highlightedIndex < options.length) {
+        const selectedOption = options[highlightedIndex];
+        input.value = selectedOption.textContent;
+        hideDropdown();
         filterAndRender();
+        return true;
       }
+      return false;
     }
     
-    input.addEventListener('input', updateSuggestion);
-    input.addEventListener('keydown', (e) => {
-      if ((e.key === 'Tab' || e.key === 'ArrowRight' || e.key === 'End') && suggestion.textContent) {
-        e.preventDefault();
-        acceptSuggestion();
+    input.addEventListener('input', () => {
+      const value = input.value.trim();
+      const data = autocompleteData[dataKey];
+      
+      if (value.length === 0) {
+        hideDropdown();
+        return;
       }
+      
+      const matches = data.filter(item => 
+        item.toLowerCase().includes(value.toLowerCase())
+      ).sort((a, b) => {
+        // Prioritise matches that start with the input
+        const aStarts = a.toLowerCase().startsWith(value.toLowerCase());
+        const bStarts = b.toLowerCase().startsWith(value.toLowerCase());
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return a.localeCompare(b);
+      });
+      
+      showDropdown(matches);
+    });
+    
+    input.addEventListener('keydown', (e) => {
+      const options = dropdown.querySelectorAll('.autocomplete-option');
+      
+      if (dropdown.style.display === 'none') return;
+      
+      switch(e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          highlightedIndex = Math.min(highlightedIndex + 1, options.length - 1);
+          updateHighlight();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          highlightedIndex = Math.max(highlightedIndex - 1, -1);
+          updateHighlight();
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (selectHighlighted()) {
+            return;
+          }
+          break;
+        case 'Escape':
+          hideDropdown();
+          break;
+      }
+    });
+    
+    input.addEventListener('blur', (e) => {
+      // Delay hiding to allow click on options
+      setTimeout(() => {
+        if (!dropdown.contains(document.activeElement)) {
+          hideDropdown();
+        }
+      }, 150);
     });
   }
 
@@ -107,12 +182,12 @@
 
   /* Setup autocomplete after data is loaded */
   buildAutocompleteData();
-  setupAutocomplete('titleInput', 'titleSuggestion', 'title');
-  setupAutocomplete('authorInput', 'authorSuggestion', 'author');
-  setupAutocomplete('countryInput', 'countrySuggestion', 'country');
-  setupAutocomplete('languageInput', 'languageSuggestion', 'language');
-  setupAutocomplete('publisherInput', 'publisherSuggestion', 'publisher');
-  setupAutocomplete('yearInput', 'yearSuggestion', 'year');
+  setupAutocomplete('titleInput', 'titleDropdown', 'title');
+  setupAutocomplete('authorInput', 'authorDropdown', 'author');
+  setupAutocomplete('countryInput', 'countryDropdown', 'country');
+  setupAutocomplete('languageInput', 'languageDropdown', 'language');
+  setupAutocomplete('publisherInput', 'publisherDropdown', 'publisher');
+  setupAutocomplete('yearInput', 'yearDropdown', 'year');
 
   /* Inputs */
   const inputs={
@@ -126,11 +201,7 @@
   const themeInputs=[...document.querySelectorAll('input[name="themeBox"]')];
   [...Object.values(inputs),...themeInputs].forEach(el=>el.addEventListener('input',filterAndRender));
   document.getElementById('searchForm').addEventListener('reset',()=>{
-    setTimeout(() => {
-      // Clear all suggestions after reset
-      document.querySelectorAll('.autocomplete-suggestion').forEach(el => el.textContent = '');
-      filterAndRender();
-    }, 0);
+    setTimeout(filterAndRender, 0);
   });
 
   /* Sorting functions */
