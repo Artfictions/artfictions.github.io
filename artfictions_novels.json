@@ -1600,19 +1600,6 @@
       "Theme 5": ""
     },
     {
-      "Title": "",
-      "Author": "",
-      "Country": "",
-      "Language": "",
-      "Publisher": "",
-      "Year of Publication": "",
-      "Theme 1": "",
-      "Theme 2": "",
-      "Theme 3": "",
-      "Theme 4": "",
-      "Theme 5": ""
-    },
-    {
       "Title": "Cátedras paralelas",
       "Author": "Andrés Gallardo ",
       "Country": "Chile",
@@ -2511,7 +2498,7 @@
     },
     {
       "Title": "Diario estúpido",
-      "Author": " Cecilia Vicuña",
+      "Author": "Cecilia Vicuña",
       "Country": "Chile",
       "Language": "Spanish",
       "Publisher": "Universidad Diego Portales",
@@ -7009,7 +6996,7 @@
     },
     {
       "Title": "Las enviadas del final",
-      "Author": " Eduardo Álvarez Tuñón",
+      "Author": "Eduardo Álvarez Tuñón",
       "Country": "Argentina",
       "Language": "Spanish",
       "Publisher": "Libros del Zorzal",
