@@ -45,15 +45,9 @@ button:hover{filter:brightness(1.15)}
 /* ------- Results table ------- */
 #results-count{margin:1.1rem 0 .8rem;font-weight:600}
 table{width:100%;border-collapse:collapse}
-thead th{position:sticky;top:0;background:var(--grey-light);font-weight:700;padding:0.7rem;border-bottom:2px solid var(--grey-mid);text-align:left;cursor:pointer;user-select:none;transition:background-color 0.15s}
-thead th:hover{background:var(--grey-mid)}
-thead th[data-sort]{position:relative}
-.sort-indicator{margin-left:0.3rem;opacity:0.4;font-size:0.7rem;position:relative;top:-0.2em}
-.sort-indicator:after{content:'↕'}
-.sort-indicator.asc{opacity:1}
-.sort-indicator.asc:after{content:'↑'}
-.sort-indicator.desc{opacity:1}
-.sort-indicator.desc:after{content:'↓'}
+thead th{position:sticky;top:0;background:var(--grey-light);font-weight:700;padding:0.7rem;border-bottom:2px solid var(--grey-mid);text-align:left;user-select:none;transition:background-color 0.15s}
+thead th[data-sort]{cursor:pointer}
+thead th[data-sort]:hover{background:var(--grey-mid)}
 tbody td{padding:0.65rem;border-bottom:1px solid var(--grey-light);vertical-align:top;font-size:.95rem}
 tbody tr:hover{background:var(--grey-light)}
 

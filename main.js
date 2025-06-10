@@ -231,16 +231,7 @@
   }
 
   function updateSortIndicators() {
-    document.querySelectorAll('.sort-indicator').forEach(indicator => {
-      indicator.className = 'sort-indicator';
-    });
-    
-    if (currentSort.column) {
-      const header = document.querySelector(`th[data-sort="${currentSort.column}"] .sort-indicator`);
-      if (header) {
-        header.className = `sort-indicator ${currentSort.direction}`;
-      }
-    }
+    // No visual indicators needed - sorting is indicated by cursor and hover states
   }
 
   /* Table header click handlers */
@@ -255,7 +246,6 @@
         currentSort.direction = 'asc';
       }
       
-      updateSortIndicators();
       render(filteredResults);
     });
   });
