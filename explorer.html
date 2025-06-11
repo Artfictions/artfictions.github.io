@@ -10,17 +10,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 
-  <!-- Chart.js -->
+  <!-- Chart.js core -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <!-- Matrix plugin for heatmap -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.0.0/dist/chartjs-chart-matrix.min.js" defer></script>
 
   <!-- Page-specific tweaks -->
   <style>
     .controls   {display:flex;flex-wrap:wrap;gap:1rem;margin:1rem 0}
     .controls > *{font-size:.95rem}
     #chartWrap,
-    #trendWrap  {border:1px solid var(--grey-light);padding:1rem;border-radius:4px;margin-top:.5rem}
+    #trendWrap,
+    #heatmapWrap {border:1px solid var(--grey-light);padding:1rem;border-radius:4px;margin-top:.5rem}
     canvas      {width:100%!important;max-height:65vh}
-    /* increased bottom margin for space before graphs */
     .stats      {display:flex;gap:1rem;margin:2rem 0}
     .stat-card  {padding:1rem;border:1px solid var(--grey-light);border-radius:4px;text-align:center}
     .stat-value {font-size:1.6rem;font-weight:700;margin-bottom:.2rem}
@@ -33,7 +35,7 @@
 <main>
   <a href="index.html" class="back-link">← Back to Catalogue</a>
   <h1>Data Explorer</h1>
-  <p>Generate visual summaries of the artfiction corpus. Choose a dimension, adjust the number of categories and chart type, and the graphic updates instantly.</p>
+  <p>Generate visual summaries of the artfiction corpus. Choose dimensions, adjust category counts and chart type, and view trends or intersections.</p>
 
   <!-- Summary cards -->
   <div id="stats" class="stats"></div>
@@ -51,12 +53,10 @@
         <option value="years">Years</option>
       </select>
     </label>
-
     <label>
       Max categories 
       <input type="number" id="maxItems" min="3" max="30" value="15" style="width:5rem">
     </label>
-
     <label>
       Chart type 
       <select id="chartType">
@@ -65,15 +65,12 @@
         <option value="doughnut">Doughnut</option>
       </select>
     </label>
-
     <button id="downloadBtn" type="button">Download chart PNG</button>
   </div>
-
   <div id="chartWrap"><canvas id="chartCanvas" aria-label="Data chart" role="img"></canvas></div>
 
   <!-- Temporal trends -->
   <h2 style="margin-top:2.5rem">Temporal trends</h2>
-
   <div class="controls">
     <label>
       Dimension 
@@ -85,14 +82,42 @@
         <option value="publishers">Publishers</option>
       </select>
     </label>
-
     <label>
       Top categories 
       <input type="number" id="trendMax" min="1" max="10" value="5" style="width:4rem">
     </label>
   </div>
-
   <div id="trendWrap"><canvas id="trendCanvas" aria-label="Trend chart" role="img"></canvas></div>
+
+  <!-- Intersection heatmap -->
+  <h2 style="margin-top:2.5rem">Intersection heatmap</h2>
+  <div class="controls">
+    <label>
+      Dimension 1 
+      <select id="dimX">
+        <option value="authors">Authors</option>
+        <option value="countries">Countries</option>
+        <option value="themes">Themes</option>
+        <option value="languages">Languages</option>
+        <option value="publishers">Publishers</option>
+      </select>
+    </label>
+    <label>
+      Dimension 2 
+      <select id="dimY">
+        <option value="countries">Countries</option>
+        <option value="authors">Authors</option>
+        <option value="themes">Themes</option>
+        <option value="languages">Languages</option>
+        <option value="publishers">Publishers</option>
+      </select>
+    </label>
+    <label>
+      Top categories 
+      <input type="number" id="heatmapK" min="3" max="20" value="10" style="width:4rem">
+    </label>
+  </div>
+  <div id="heatmapWrap"><canvas id="heatmapCanvas" aria-label="Intersection heatmap" role="img"></canvas></div>
 </main>
 
 <script src="explorer.js" defer></script>
