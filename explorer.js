@@ -1,28 +1,33 @@
 /* explorer.js – interactive charts for Artfictions corpus
-   Requires Chart.js 4 (loaded in explorer.html) */
+   Requires Chart.js 4 + matrix plugin (loaded in explorer.html) */
    (async function () {
     const DATA_URL = 'artfictions_novels.json';
   
     /* DOM shorthand */
     const $ = id => document.getElementById(id);
   
-    /* Snapshot chart controls */
+    /* Snapshot controls */
     const dimSelect   = $('dimension');
     const maxInput    = $('maxItems');
     const typeSelect  = $('chartType');
     const dlBtn       = $('downloadBtn');
   
-    /* Trend chart controls */
+    /* Trend controls */
     const trendDim    = $('trendDimension');
     const trendMax    = $('trendMax');
+  
+    /* Heatmap controls */
+    const dimX        = $('dimX');
+    const dimY        = $('dimY');
+    const heatmapK    = $('heatmapK');
   
     /* Containers */
     const statsBox    = $('stats');
     const ctx         = $('chartCanvas').getContext('2d');
     const trendCtx    = $('trendCanvas').getContext('2d');
+    const heatCtx     = $('heatmapCanvas').getContext('2d');
   
-    let novels = [];
-    let chart, trendChart;
+    let novels = [], chart, trendChart, heatChart;
   
     /* Helpers */
     const colour = i => `hsl(${(i * 37) % 360} 65% 55%)`;
@@ -132,7 +137,7 @@
       });
     }
   
-    /* Temporal trend */
+    /* Temporal trends */
     function buildSeries(dim, topK) {
       const freq = new Map();
       novels.forEach(n => getItems(n, dim).forEach(it => {
@@ -145,9 +150,7 @@
         const y = parseInt(n['Year of Publication']);
         if (!y) return;
         if (!matrix[y]) matrix[y] = Object.fromEntries(top.map(t=>[t,0]));
-        getItems(n, dim).forEach(it => {
-          if (top.includes(it)) matrix[y][it]++;
-        });
+        getItems(n, dim).forEach(it => { if (top.includes(it)) matrix[y][it]++; });
       });
   
       const years = Object.keys(matrix).map(Number).sort((a,b)=>a-b);
@@ -177,9 +180,103 @@
       });
     }
   
+    /* Intersection heatmap */
+    function buildIntersection(dim1, dim2, K) {
+      const freq1 = new Map(), freq2 = new Map();
+      novels.forEach(n => {
+        getItems(n, dim1).forEach(a => freq1.set(a, (freq1.get(a)||0)+1));
+        getItems(n, dim2).forEach(b => freq2.set(b, (freq2.get(b)||0)+1));
+      });
+      const top1 = [...freq1.entries()].sort((a,b)=>b[1]-a[1]).slice(0,K).map(e=>e[0]);
+      const top2 = [...freq2.entries()].sort((a,b)=>b[1]-a[1]).slice(0,K).map(e=>e[0]);
+  
+      const matrix = {};
+      novels.forEach(n => {
+        const v1s = getItems(n, dim1), v2s = getItems(n, dim2);
+        v1s.forEach(v1 => {
+          if (!top1.includes(v1)) return;
+          v2s.forEach(v2 => {
+            if (!top2.includes(v2)) return;
+            matrix[v1] = matrix[v1] || {};
+            matrix[v1][v2] = (matrix[v1][v2] || 0) + 1;
+          });
+        });
+      });
+  
+      const data = [];
+      let maxCount = 0;
+      top1.forEach((r) => {
+        top2.forEach((c) => {
+          const v = matrix[r]?.[c] || 0;
+          maxCount = Math.max(maxCount, v);
+          data.push({ x: c, y: r, v });
+        });
+      });
+  
+      return { top1, top2, data, maxCount };
+    }
+  
+    function renderHeatmap() {
+      const K = Math.max(3, Math.min(+heatmapK.value||10, 20));
+      heatmapK.value = K;
+      const { top1, top2, data, maxCount } = buildIntersection(dimX.value, dimY.value, K);
+  
+      if (heatChart) heatChart.destroy();
+      heatChart = new Chart(heatCtx, {
+        type: 'matrix',
+        data: {
+          datasets: [{
+            label: `${dimX.value} × ${dimY.value}`,
+            data,
+            backgroundColor(ctx) {
+              const v = ctx.dataset.data[ctx.dataIndex].v;
+              const lum = 90 - (v / maxCount) * 60;
+              return `hsl(210,60%,${lum}%)`;
+            },
+            width: ({chart}) => (chart.chartArea?.width  / top2.length) - 1,
+            height:({chart}) => (chart.chartArea?.height / top1.length) - 1,
+            borderWidth: 1,
+            borderColor: 'white'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              type: 'category',
+              labels: top2,
+              offset: true,
+              grid: { display: false },
+              title: { display: true, text: dimY.value }
+            },
+            y: {
+              type: 'category',
+              labels: top1,
+              offset: true,
+              grid: { display: false },
+              title: { display: true, text: dimX.value }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                title() { return ''; },
+                label(ctx) {
+                  const { x, y, v } = ctx.raw;
+                  return `${y} × ${x}: ${v} novels`;
+                }
+              }
+            },
+            legend: { display: false }
+          }
+        }
+      });
+    }
+  
     /* Event listeners */
     [dimSelect, maxInput, typeSelect].forEach(el => el.addEventListener('input', renderChart));
     [trendDim, trendMax].forEach(el => el.addEventListener('input', renderTrend));
+    [dimX, dimY, heatmapK].forEach(el => el.addEventListener('input', renderHeatmap));
     dlBtn.addEventListener('click', () => {
       if (!chart) return;
       const link = document.createElement('a');
@@ -204,7 +301,6 @@
         n['Year of Publication'] = tidy(n['Year of Publication']);
       });
   
-      // compute distinct counts
       const allAuthors    = new Set(novels.map(n => n.Author));
       const allPublishers = new Set(novels.map(n => n.Publisher));
       const allCountries  = new Set(novels.map(n => n.Country));
@@ -222,6 +318,7 @@
   
       renderChart();
       renderTrend();
+      renderHeatmap();
   
     } catch (err) {
       ctx.canvas.parentNode.innerHTML =
