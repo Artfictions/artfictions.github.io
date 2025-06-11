@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data Explorer – Artfictions</title>
+  <title>Data Explorer – Artfictions</title>
 
   <!-- Shared fonts & stylesheet -->
   <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -13,23 +13,25 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 
-  <!-- Page‑specific tweaks -->
+  <!-- Page-specific tweaks -->
   <style>
     .controls   {display:flex;flex-wrap:wrap;gap:1rem;margin:1rem 0}
     .controls > *{font-size:.95rem}
     #chartWrap,
     #trendWrap  {border:1px solid var(--grey-light);padding:1rem;border-radius:4px;margin-top:.5rem}
     canvas      {width:100%!important;max-height:65vh}
-    .stats      {display:flex;gap:1rem;margin:1rem 0}
+    /* increased bottom margin for space before graphs */
+    .stats      {display:flex;gap:1rem;margin:2rem 0}
     .stat-card  {padding:1rem;border:1px solid var(--grey-light);border-radius:4px;text-align:center}
     .stat-value {font-size:1.6rem;font-weight:700;margin-bottom:.2rem}
+    .stat-label {font-size:.9rem;color:var(--grey-dark)}
     .back-link  {display:inline-block;margin-bottom:1rem;font-weight:600;color:var(--fg);text-decoration:none}
     .back-link:hover{text-decoration:underline}
   </style>
 </head>
 <body>
 <main>
-  <a href="index.html" class="back-link">← Back to Catalogue</a>
+  <a href="index.html" class="back-link">← Back to Catalogue</a>
   <h1>Data Explorer</h1>
   <p>Generate visual summaries of the artfiction corpus. Choose a dimension, adjust the number of categories and chart type, and the graphic updates instantly.</p>
 
@@ -39,7 +41,7 @@
   <!-- Categorical snapshot -->
   <div class="controls">
     <label>
-      Dimension 
+      Dimension 
       <select id="dimension">
         <option value="themes">Themes</option>
         <option value="authors">Authors</option>
@@ -51,12 +53,12 @@
     </label>
 
     <label>
-      Max categories 
+      Max categories 
       <input type="number" id="maxItems" min="3" max="30" value="15" style="width:5rem">
     </label>
 
     <label>
-      Chart type 
+      Chart type 
       <select id="chartType">
         <option value="bar">Bar</option>
         <option value="pie">Pie</option>
@@ -74,7 +76,7 @@
 
   <div class="controls">
     <label>
-      Dimension 
+      Dimension 
       <select id="trendDimension">
         <option value="themes">Themes</option>
         <option value="authors">Authors</option>
@@ -85,7 +87,7 @@
     </label>
 
     <label>
-      Top categories 
+      Top categories 
       <input type="number" id="trendMax" min="1" max="10" value="5" style="width:4rem">
     </label>
   </div>
