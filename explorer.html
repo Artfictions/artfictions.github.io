@@ -3,325 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data Explorer - Artfictions</title>
+  <title>Data Explorer – Artfictions</title>
+
+  <!-- Existing fonts & stylesheet -->
   <link rel="preconnect" href="https://fonts.gstatic.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Lightweight charting library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+
   <style>
-    .explorer-container {
-      margin: 2rem 0;
-    }
-    
-    .viz-section {
-      margin: 3rem 0;
-      padding: 2rem;
-      background: var(--grey-light);
-      border-radius: 8px;
-    }
-    
-    .viz-section h2 {
-      margin-top: 0;
-      margin-bottom: 1.5rem;
-      font-size: 1.5rem;
-      color: var(--fg);
-    }
-    
-    .viz-section h3 {
-      margin-top: 2rem;
-      margin-bottom: 1rem;
-      font-size: 1.2rem;
-      color: var(--grey-dark);
-    }
-    
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
-      margin: 2rem 0;
-    }
-    
-    .chart-container {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      min-height: 300px;
-      position: relative;
-    }
-    
-    .chart-title {
-      font-weight: 600;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-    
-    .controls {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-    }
-    
-    .control-group {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .control-group label {
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-    
-    select.viz-control {
-      padding: 0.4rem 0.8rem;
-      font-size: 0.9rem;
-      border: 1px solid var(--grey-mid);
-      border-radius: 4px;
-      background: white;
-    }
-    
-    .back-link {
-      display: inline-block;
-      margin-bottom: 1rem;
-      color: var(--fg);
-      text-decoration: none;
-      font-weight: 600;
-    }
-    
-    .back-link:hover {
-      text-decoration: underline;
-    }
-    
-    /* Chart-specific styles */
-    .arc path {
-      stroke: white;
-      stroke-width: 2px;
-      cursor: pointer;
-      transition: opacity 0.3s;
-    }
-    
-    .arc:hover path {
-      opacity: 0.8;
-    }
-    
-    .tooltip {
-      position: absolute;
-      background: rgba(0, 0, 0, 0.9);
-      color: white;
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-size: 12px;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 1000;
-    }
-    
-    .legend {
-      font-size: 12px;
-    }
-    
-    .legend-item {
-      cursor: pointer;
-    }
-    
-    .axis {
-      font-size: 11px;
-    }
-    
-    .axis-label {
-      font-size: 12px;
-      font-weight: 600;
-    }
-    
-    /* Sankey styles */
-    .sankey-link {
-      fill: none;
-      stroke-opacity: 0.5;
-    }
-    
-    .sankey-link:hover {
-      stroke-opacity: 0.8;
-    }
-    
-    .sankey-node rect {
-      cursor: pointer;
-      fill-opacity: 0.9;
-    }
-    
-    .sankey-node text {
-      font-size: 11px;
-      font-weight: 500;
-    }
-    
-    /* Parallel coordinates styles */
-    .parallel-line {
-      fill: none;
-      stroke-opacity: 0.4;
-      stroke-width: 1.5;
-    }
-    
-    .parallel-line:hover {
-      stroke-opacity: 0.8;
-      stroke-width: 3;
-    }
-    
-    /* Chord diagram styles */
-    .chord {
-      fill-opacity: 0.7;
-      stroke-width: 0.5px;
-    }
-    
-    .chord:hover {
-      fill-opacity: 0.9;
-    }
-    
-    /* Loading spinner */
-    .loading {
-      text-align: center;
-      padding: 2rem;
-      color: var(--grey-dark);
-    }
-    
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .charts-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .controls {
-        flex-direction: column;
-      }
-    }
+    /* Page‑specific tweaks that don’t belong in the global sheet */
+    .controls   {display:flex;flex-wrap:wrap;gap:1rem;margin:1rem 0}
+    .controls > *{font-size:.95rem}
+    #chartWrap  {background:var(--grey-light);padding:1rem;border-radius:4px}
+    canvas      {width:100%!important;max-height:65vh}
+    .stat-card  {padding:1rem;background:var(--grey-light);border-radius:4px;text-align:center}
+    .stat-value {font-size:1.6rem;font-weight:700;margin-bottom:.2rem}
+    .back-link  {display:inline-block;margin-bottom:1rem;font-weight:600;color:var(--fg);text-decoration:none}
+    .back-link:hover{text-decoration:underline}
   </style>
 </head>
 <body>
 <main>
-  <a href="index.html" class="back-link">← Back to Catalogue</a>
-  
+  <a href="index.html" class="back-link">← Back to Catalogue</a>
   <h1>Data Explorer</h1>
-  
-  <div class="explorer-container">
-    <!-- 1. Statistical Dashboards -->
-    <div class="viz-section" id="statistical-section">
-      <h2>1. Statistical Overview</h2>
-      <div class="charts-grid" id="stat-charts">
-        <div class="chart-container">
-          <div class="chart-title">Countries</div>
-          <div id="country-chart"></div>
-        </div>
-        <div class="chart-container">
-          <div class="chart-title">Languages</div>
-          <div id="language-chart"></div>
-        </div>
-        <div class="chart-container">
-          <div class="chart-title">Publishers (Top 20)</div>
-          <div id="publisher-chart"></div>
-        </div>
-        <div class="chart-container">
-          <div class="chart-title">Themes</div>
-          <div id="theme-chart"></div>
-        </div>
-        <div class="chart-container">
-          <div class="chart-title">Publication Years</div>
-          <div id="year-chart"></div>
-        </div>
-        <div class="chart-container">
-          <div class="chart-title">Authors (Top 20)</div>
-          <div id="author-chart"></div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 2. Temporal Visualizations -->
-    <div class="viz-section" id="temporal-section">
-      <h2>2. Temporal Trends</h2>
-      <div class="controls">
-        <div class="control-group">
-          <label for="temporal-view">View by:</label>
-          <select id="temporal-view" class="viz-control">
-            <option value="themes">Themes</option>
-            <option value="countries">Countries</option>
-            <option value="languages">Languages</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <label for="temporal-smoothing">Smoothing:</label>
-          <select id="temporal-smoothing" class="viz-control">
-            <option value="1">None</option>
-            <option value="3">3 years</option>
-            <option value="5" selected>5 years</option>
-            <option value="10">10 years</option>
-          </select>
-        </div>
-      </div>
-      <div class="chart-container" style="height: 400px;">
-        <div id="temporal-chart"></div>
-      </div>
-    </div>
-    
-    <!-- 3. Sankey Diagrams -->
-    <div class="viz-section" id="sankey-section">
-      <h2>3. Flow Diagrams</h2>
-      <div class="controls">
-        <div class="control-group">
-          <label for="sankey-type">Show flow between:</label>
-          <select id="sankey-type" class="viz-control">
-            <option value="theme-country">Themes → Countries</option>
-            <option value="theme-author">Themes → Authors (Top 30)</option>
-            <option value="country-publisher">Countries → Publishers</option>
-            <option value="language-theme">Languages → Themes</option>
-          </select>
-        </div>
-      </div>
-      <div class="chart-container" style="height: 600px;">
-        <div id="sankey-chart"></div>
-      </div>
-    </div>
-    
-    <!-- 4. Parallel Coordinates -->
-    <div class="viz-section" id="parallel-section">
-      <h2>4. Multi-dimensional Patterns</h2>
-      <div class="controls">
-        <div class="control-group">
-          <label for="parallel-sample">Sample size:</label>
-          <select id="parallel-sample" class="viz-control">
-            <option value="50">50 novels</option>
-            <option value="100" selected>100 novels</option>
-            <option value="200">200 novels</option>
-            <option value="all">All novels</option>
-          </select>
-        </div>
-      </div>
-      <div class="chart-container" style="height: 500px;">
-        <div id="parallel-chart"></div>
-      </div>
-    </div>
-    
-    <!-- 5. Chord Diagrams -->
-    <div class="viz-section" id="chord-section">
-      <h2>5. Relationship Networks</h2>
-      <div class="controls">
-        <div class="control-group">
-          <label for="chord-type">Show relationships between:</label>
-          <select id="chord-type" class="viz-control">
-            <option value="country-publisher">Countries ↔ Publishers</option>
-            <option value="language-theme">Languages ↔ Themes</option>
-            <option value="country-language">Countries ↔ Languages</option>
-            <option value="theme-theme">Theme Co-occurrences</option>
-          </select>
-        </div>
-      </div>
-      <div class="chart-container" style="height: 600px;">
-        <div id="chord-chart"></div>
-      </div>
-    </div>
+  <p>Generate quick visual summaries of the artfiction corpus. Choose a dimension, adjust the number of categories and chart type, and the graphic updates instantly.</p>
+
+  <div class="controls">
+    <label>
+      Dimension 
+      <select id="dimension">
+        <option value="themes">Themes</option>
+        <option value="authors">Authors</option>
+        <option value="countries">Countries</option>
+        <option value="languages">Languages</option>
+        <option value="publishers">Publishers</option>
+        <option value="years">Years</option>
+      </select>
+    </label>
+
+    <label>
+      Max categories 
+      <input type="number" id="maxItems" min="3" max="30" value="15" style="width:5rem">
+    </label>
+
+    <label>
+      Chart type 
+      <select id="chartType">
+        <option value="bar">Bar</option>
+        <option value="pie">Pie</option>
+        <option value="doughnut">Doughnut</option>
+      </select>
+    </label>
+
+    <button id="downloadBtn">Download chart PNG</button>
   </div>
+
+  <div id="stats" class="stats"></div>
+
+  <div id="chartWrap"><canvas id="chartCanvas" aria-label="Data chart" role="img"></canvas></div>
 </main>
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
-<script src="explorer.js"></script>
+<script src="explorer.js" defer></script>
 </body>
 </html>

@@ -1,165 +1,147 @@
-/*  stats.js  ──  Statistical dashboard only (June 2025)
-   ------------------------------------------------------
-   ▸ Loads artfictions_novels.json
-   ▸ Builds six interactive charts inside the #stat-charts grid:
-        • Countries         donut‑pie  (#country-chart)
-        • Languages         donut‑pie  (#language-chart)
-        • Publishers (Top20)h‑bar      (#publisher-chart)
-        • Themes (Top20)    h‑bar      (#theme-chart)
-        • Years             v‑bar      (#year-chart)
-        • Authors (Top20)   v‑bar      (#author-chart)
-   ▸ No global pollution except the kick‑off call at the end.
-   ------------------------------------------------------ */
-   (async function () {
+/* explorer.js – interactive charts for Artfictions data explorer
+   Relies on Chart.js 4 (loaded in explorer.html) */
+(async function () {
+  const DATA_URL = 'artfictions_novels.json';
+  const dimSelect = document.getElementById('dimension');
+  const maxInput  = document.getElementById('maxItems');
+  const typeSelect= document.getElementById('chartType');
+  const dlBtn     = document.getElementById('downloadBtn');
+  const statsBox  = document.getElementById('stats');
+  const ctx       = document.getElementById('chartCanvas').getContext('2d');
 
-    /* ──── CONFIG ─────────────────────────────────────── */
-    const FILE = 'artfictions_novels.json';
-    const COLOUR = d3.scaleOrdinal(d3.schemeTableau10);
-    const MARGIN = { top: 20, right: 24, bottom: 40, left: 60 };
-  
-    /* ──── TOOLTIP (one node reused everywhere) ───────── */
-    const tip = document.createElement('div');
-    Object.assign(tip.style, {
-      position:'absolute',pointerEvents:'none',
-      background:'rgba(0,0,0,.85)',color:'#fff',
-      padding:'6px 10px',borderRadius:'4px',fontSize:'12px',
-      opacity:0,transition:'opacity .15s',zIndex:1000
+  let novels = [];
+  let chart;   // Chart.js instance
+
+  /* ---------- Helpers ---------- */
+  const colour = i => `hsl(${(i * 37) % 360} 65% 55%)`;           // deterministic palette
+  const tidy   = s => (s && String(s).trim()) || 'Unknown';
+
+  function extractThemes(novel) {
+    const out = [];
+    for (let i = 1; i <= 5; i++) {
+      const t = tidy(novel[`Theme ${i}`]);
+      if (t !== 'Unknown') out.push(t);
+    }
+    return out;
+  }
+
+  function getItems(novel, dim) {
+    switch (dim) {
+      case 'themes':    return extractThemes(novel);
+      case 'authors':   return [tidy(novel.Author)];
+      case 'countries': return [tidy(novel.Country)];
+      case 'languages': return [tidy(novel.Language)];
+      case 'publishers':return [tidy(novel.Publisher)];
+      case 'years':     return [tidy(novel['Year of Publication'])];
+      default:          return [];
+    }
+  }
+
+  function summarise(dim, limit) {
+    const counts = new Map();
+    novels.forEach(novel => {
+      getItems(novel, dim).forEach(item => {
+        counts.set(item, (counts.get(item) || 0) + 1);
+      });
     });
-    tip.show = (e,html)=>{ tip.innerHTML=html; tip.style.opacity=1; tip.move(e); };
-    tip.move = e=>{ tip.style.left=e.pageX+14+'px'; tip.style.top=e.pageY+14+'px'; };
-    tip.hide = ()=> tip.style.opacity=0;
-    document.body.appendChild(tip);
-  
-    /* ──── LOAD & PRE‑PROCESS ─────────────────────────── */
-    const raw = await fetch(FILE).then(r=>r.json());
-    const novels = Array.isArray(raw) ? raw : raw.Novels || [];
-  
+
+    // Convert to sorted arrays
+    const sorted = [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit);
+
+    return {
+      labels: sorted.map(d => d[0]),
+      data:   sorted.map(d => d[1]),
+      totalDistinct: counts.size
+    };
+  }
+
+  function updateStats(info, totalNovels) {
+    statsBox.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-value">${totalNovels}</div>
+        <div class="stat-label">Total novels</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${info.totalDistinct}</div>
+        <div class="stat-label">Distinct ${dimSelect.value}</div>
+      </div>`;
+  }
+
+  function renderChart(info) {
+    // destroy old chart instance to avoid leaks
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+      type: typeSelect.value,
+      data: {
+        labels: info.labels,
+        datasets: [{
+          label: `Count of ${dimSelect.value}`,
+          data: info.data,
+          backgroundColor: info.labels.map((_, i) => colour(i)),
+          borderColor: 'rgba(0,0,0,.1)'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: typeSelect.value !== 'bar' },
+          tooltip: { callbacks: { percentage(ctx) {
+              const sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const value = ctx.raw;
+              return `${((value / sum) * 100).toFixed(1)} %`;
+            }}}
+        },
+        scales: typeSelect.value === 'bar'
+          ? { y: { beginAtZero: true, ticks: { precision:0 } } }
+          : {}
+      }
+    });
+  }
+
+  function refresh() {
+    const limit = Math.max(3, Math.min(+maxInput.value || 15, 30));
+    maxInput.value = limit;
+    const info = summarise(dimSelect.value, limit);
+    renderChart(info);
+    updateStats(info, novels.length);
+  }
+
+  /* ---------- Event listeners ---------- */
+  [dimSelect, maxInput, typeSelect].forEach(el => el.addEventListener('input', refresh));
+
+  dlBtn.addEventListener('click', () => {
+    if (!chart) return;
+    const link = document.createElement('a');
+    link.href = chart.toBase64Image('image/png', 1);
+    link.download = `artfictions_${dimSelect.value}.png`;
+    link.click();
+  });
+
+  /* ---------- Data load ---------- */
+  try {
+    const res = await fetch(DATA_URL);
+    if (!res.ok) throw new Error(`Dataset load failed (${res.status})`);
+    const raw = await res.json();
+
+    novels = Array.isArray(raw) ? raw : raw.Novels || [];
+    if (!Array.isArray(novels)) throw new Error('Could not locate novels array');
+
+    // Normalise once for quick access later
     novels.forEach(n => {
-      /* collect themes */
-      const t=[]; for(let i=1;i<=5;i++){ const k=`Theme ${i}`; if(n[k] && String(n[k]).trim()) t.push(String(n[k]).trim()); }
-      n.__themes    = t;
-      n.__author    = n.Author     ? String(n.Author).trim()          : 'Unknown';
-      n.__country   = n.Country    ? String(n.Country).trim()         : 'Unknown';
-      n.__language  = n.Language   ? String(n.Language).trim()        : 'Unknown';
-      n.__publisher = n.Publisher  ? String(n.Publisher).trim()       : 'Unknown';
-      n.__year      = n['Year of Publication'] ? +n['Year of Publication'] || null : null;
+      n.Author    = tidy(n.Author);
+      n.Country   = tidy(n.Country);
+      n.Language  = tidy(n.Language);
+      n.Publisher = tidy(n.Publisher);
+      n['Year of Publication'] = tidy(n['Year of Publication']);
     });
-  
-    /* helper to build simple frequency maps */
-    const freq = (arr, accessor) => {
-      const m=new Map();
-      arr.forEach(d=>{ const k=accessor(d); if(!k) return; m.set(k,(m.get(k)||0)+1);});
-      return m;
-    };
-  
-    const counts = {
-      countries  : freq(novels,d=>d.__country),
-      languages  : freq(novels,d=>d.__language),
-      publishers : freq(novels,d=>d.__publisher),
-      themes     : freq(novels.flatMap(d=>d.__themes),d=>d),
-      years      : freq(novels.filter(d=>d.__year),d=>d.__year),
-      authors    : freq(novels,d=>d.__author)
-    };
-  
-    /* ──── CHART BUILDERS ─────────────────────────────── */
-    function pieChart(container, map){
-      const host=document.getElementById(container); if(!host) return;
-      host.innerHTML='';
-      const W=host.clientWidth, H=host.clientHeight||300;
-      const r=Math.min(W,H)/2 - 10;
-      const data=[...map].sort((a,b)=>b[1]-a[1]).slice(0,15);
-      const pie=d3.pie().value(d=>d[1]);
-      const arc=d3.arc().innerRadius(r*0.45).outerRadius(r);
-  
-      const svg=d3.select(host).append('svg')
-        .attr('width',W).attr('height',H)
-        .append('g').attr('transform',`translate(${W/2},${H/2})`);
-  
-      svg.selectAll('path').data(pie(data)).enter().append('path')
-        .attr('d',arc).attr('fill',(d,i)=>COLOUR(i))
-        .on('mouseover',(e,d)=>tip.show(e,`${d.data[0]}: ${d.data[1]}`))
-        .on('mousemove',tip.move)
-        .on('mouseout',tip.hide);
-  
-      /* legend */
-      const lg = svg.append('g').attr('transform',`translate(${r+24},${-r})`);
-      lg.selectAll('rect').data(data).enter().append('rect')
-        .attr('x',0).attr('y',(d,i)=>i*16).attr('width',12).attr('height',12).attr('fill',(d,i)=>COLOUR(i));
-      lg.selectAll('text').data(data).enter().append('text')
-        .attr('x',18).attr('y',(d,i)=>i*16+10).text(d=>`${d[0]} (${d[1]})`).style('font-size','11px');
-    }
-  
-    function barChartV(container, map, topN=20){
-      const host=document.getElementById(container); if(!host) return;
-      host.innerHTML='';
-      const W=host.clientWidth, H=host.clientHeight||300;
-      const data=[...map].filter(d=>d[0]).sort((a,b)=>b[1]-a[1]).slice(0,topN);
-      const x=d3.scaleBand().domain(data.map(d=>d[0])).range([0,W-MARGIN.left-MARGIN.right]).padding(0.15);
-      const y=d3.scaleLinear().domain([0,d3.max(data,d=>d[1])]).nice().range([H-MARGIN.top-MARGIN.bottom,0]);
-  
-      const svg=d3.select(host).append('svg')
-        .attr('width',W).attr('height',H)
-        .append('g').attr('transform',`translate(${MARGIN.left},${MARGIN.top})`);
-  
-      svg.selectAll('rect').data(data).enter().append('rect')
-        .attr('x',d=>x(d[0])).attr('y',d=>y(d[1]))
-        .attr('width',x.bandwidth()).attr('height',d=>y(0)-y(d[1]))
-        .attr('fill',(d,i)=>COLOUR(i))
-        .on('mouseover',(e,d)=>tip.show(e,`${d[0]}: ${d[1]}`))
-        .on('mousemove',tip.move)
-        .on('mouseout',tip.hide);
-  
-      svg.append('g').attr('transform',`translate(0,${y(0)})`)
-        .call(d3.axisBottom(x).tickSizeOuter(0))
-        .selectAll('text').attr('transform','rotate(-45)').style('text-anchor','end');
-      svg.append('g').call(d3.axisLeft(y).ticks(4));
-    }
-  
-    function barChartH(container, map, topN=20){
-      const host=document.getElementById(container); if(!host) return;
-      host.innerHTML='';
-      const W=host.clientWidth, H=host.clientHeight||300;
-      const data=[...map].filter(d=>d[0]).sort((a,b)=>b[1]-a[1]).slice(0,topN).reverse(); // smallest on top
-      const y=d3.scaleBand().domain(data.map(d=>d[0])).range([H-MARGIN.top-MARGIN.bottom,0]).padding(0.1);
-      const x=d3.scaleLinear().domain([0,d3.max(data,d=>d[1])]).nice().range([0,W-MARGIN.left-MARGIN.right]);
-  
-      const svg=d3.select(host).append('svg')
-        .attr('width',W).attr('height',H)
-        .append('g').attr('transform',`translate(${MARGIN.left},${MARGIN.top})`);
-  
-      svg.selectAll('rect').data(data).enter().append('rect')
-        .attr('y',d=>y(d[0])).attr('x',0)
-        .attr('height',y.bandwidth()).attr('width',d=>x(d[1]))
-        .attr('fill',(d,i)=>COLOUR(i))
-        .on('mouseover',(e,d)=>tip.show(e,`${d[0]}: ${d[1]}`))
-        .on('mousemove',tip.move)
-        .on('mouseout',tip.hide);
-  
-      svg.append('g').attr('class','y‑axis').call(d3.axisLeft(y));
-      svg.append('g').attr('transform',`translate(0,${y.range()[0]+y.bandwidth()})`).call(d3.axisBottom(x).ticks(4));
-    }
-  
-    /* ──── DRAW ALL CHARTS ────────────────────────────── */
-    pieChart ('country-chart' , counts.countries );
-    pieChart ('language-chart', counts.languages );
-    barChartH('publisher-chart', counts.publishers , 20);
-    barChartH('theme-chart'   , counts.themes     , 20);
-    barChartV('year-chart'    , counts.years      , 999);   // show all years
-    barChartV('author-chart'  , counts.authors    , 20);
-  
-    /* ──── RESPONSIVE: redraw on resize ───────────────── */
-    let resizeTimeout=null;
-    window.addEventListener('resize', ()=> {
-      clearTimeout(resizeTimeout);
-      resizeTimeout=setTimeout(()=> {
-        pieChart ('country-chart' , counts.countries );
-        pieChart ('language-chart', counts.languages );
-        barChartH('publisher-chart', counts.publishers , 20);
-        barChartH('theme-chart'   , counts.themes     , 20);
-        barChartV('year-chart'    , counts.years      , 999);
-        barChartV('author-chart'  , counts.authors    , 20);
-      }, 200);
-    });
-  
-  })();
-  
+
+    refresh(); // initial render
+  } catch (err) {
+    ctx.canvas.parentNode.innerHTML =
+      `<p style="color:#b00;font-weight:600">Error: ${err.message}</p>`;
+    console.error(err);
+  }
+})();
