@@ -5,21 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Data Explorer – Artfictions</title>
 
-  <!-- Existing fonts & stylesheet -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <!-- Shared fonts & stylesheet -->
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 
-  <!-- Lightweight charting library -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 
+  <!-- Page‑specific tweaks -->
   <style>
-    /* Page‑specific tweaks that don’t belong in the global sheet */
     .controls   {display:flex;flex-wrap:wrap;gap:1rem;margin:1rem 0}
     .controls > *{font-size:.95rem}
-    #chartWrap  {background:var(--grey-light);padding:1rem;border-radius:4px}
+    #chartWrap,
+    #trendWrap  {border:1px solid var(--grey-light);padding:1rem;border-radius:4px;margin-top:.5rem}
     canvas      {width:100%!important;max-height:65vh}
-    .stat-card  {padding:1rem;background:var(--grey-light);border-radius:4px;text-align:center}
+    .stats      {display:flex;gap:1rem;margin:1rem 0}
+    .stat-card  {padding:1rem;border:1px solid var(--grey-light);border-radius:4px;text-align:center}
     .stat-value {font-size:1.6rem;font-weight:700;margin-bottom:.2rem}
     .back-link  {display:inline-block;margin-bottom:1rem;font-weight:600;color:var(--fg);text-decoration:none}
     .back-link:hover{text-decoration:underline}
@@ -29,8 +31,12 @@
 <main>
   <a href="index.html" class="back-link">← Back to Catalogue</a>
   <h1>Data Explorer</h1>
-  <p>Generate quick visual summaries of the artfiction corpus. Choose a dimension, adjust the number of categories and chart type, and the graphic updates instantly.</p>
+  <p>Generate visual summaries of the artfiction corpus. Choose a dimension, adjust the number of categories and chart type, and the graphic updates instantly.</p>
 
+  <!-- Summary cards -->
+  <div id="stats" class="stats"></div>
+
+  <!-- Categorical snapshot -->
   <div class="controls">
     <label>
       Dimension 
@@ -58,12 +64,33 @@
       </select>
     </label>
 
-    <button id="downloadBtn">Download chart PNG</button>
+    <button id="downloadBtn" type="button">Download chart PNG</button>
   </div>
 
-  <div id="stats" class="stats"></div>
-
   <div id="chartWrap"><canvas id="chartCanvas" aria-label="Data chart" role="img"></canvas></div>
+
+  <!-- Temporal trends -->
+  <h2 style="margin-top:2.5rem">Temporal trends</h2>
+
+  <div class="controls">
+    <label>
+      Dimension 
+      <select id="trendDimension">
+        <option value="themes">Themes</option>
+        <option value="authors">Authors</option>
+        <option value="countries">Countries</option>
+        <option value="languages">Languages</option>
+        <option value="publishers">Publishers</option>
+      </select>
+    </label>
+
+    <label>
+      Top categories 
+      <input type="number" id="trendMax" min="1" max="10" value="5" style="width:4rem">
+    </label>
+  </div>
+
+  <div id="trendWrap"><canvas id="trendCanvas" aria-label="Trend chart" role="img"></canvas></div>
 </main>
 
 <script src="explorer.js" defer></script>
