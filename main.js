@@ -320,7 +320,7 @@
       tr.innerHTML=`<td>${n.Title||''}</td><td>${n.Author||''}</td><td>${n.Country||''}</td><td>${n.Language||''}</td><td>${n.Publisher||''}</td><td>${n['Year of Publication']||''}</td><td>${n.__themes.join(', ')}</td>`;
       tbody.appendChild(tr);
     });
-    countEl.textContent=`Showing ${rows.length} of ${novels.length}`;
+    countEl.textContent=`Showing ${rows.length} of ${novels.length} novels`;
     updateDownload(sortedRows);
   }
 
